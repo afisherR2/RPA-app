@@ -114,7 +114,8 @@ shinyServer(function(input, output) {
                         'please enter a valid NPDES ID',
                         icon = NA, color = '#b30000')
         
-        feedbackDanger('NPDESID', substr(input$WQSinput$name, 1, 2) != substr(input$NPDESID, 1, 2),
+        # Throw error if the first two characters of the NPDES ID does not match the first two characters of the WQS file
+        feedbackDanger('NPDESID', substr(input$WQSinput$name, 1, 2) != substr(input$NPDESID, 1, 2), 
                        'please double check the NPDES ID and WQS file',
                        icon = NA, color = '#b30000')
         
@@ -123,7 +124,7 @@ shinyServer(function(input, output) {
                        icon = NA, color = '#b30000')
 
         req(nchar(input$NPDESID) == 9) # BREAK if NPDES ID isnt 9 char
-        req(substr(input$WQSinput$name, 1, 2) == substr(input$NPDESID, 1, 2))
+        req(substr(input$WQSinput$name, 1, 2) == substr(input$NPDESID, 1, 2)) # break if NPDES ID doesn't match WQS file
         req(file_ext(input$WQSinput$datapath) == 'xlsx') # BREAK check for WQS file upload
         
         # showNotification('Let me just pull some files from ICIS-NPDES', type = 'message')
@@ -135,7 +136,7 @@ shinyServer(function(input, output) {
     }, ignoreNULL = FALSE)
     
 
-# NPDES ID is validity check ---------------------------------------------------
+# NPDES ID validity check ---------------------------------------------------
     dfinfo2 <- reactive({
         req(dfinfo1()) # BREAK dfinfo1
         req(input$WQSinput) # BREAK for WQS upload
@@ -197,8 +198,6 @@ shinyServer(function(input, output) {
 # filter dmr by outfall checkbox, stat base, monitoring location ---------------
 # change dmr value to numeric and monitoring period  to date
     dmr_of <- eventReactive(input$nextBtn2, {
-        
-        # showNotification('Theyre being a little sus, so....', type = 'message')
         
         req(input$radiob)  # BREAK check if outfall is selected
         
