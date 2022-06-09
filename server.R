@@ -1,0 +1,410 @@
+# Require packages
+require(shiny)
+require(shinyBS)
+require(shinythemes)
+require(shinyvalidate)
+require(shinyFeedback)
+require(shinybusy)
+require(echor)
+require(dplyr)
+require(plotly)
+require(lubridate)
+require(purrr)
+require(readxl)
+require(tools)
+require(tinytex)
+
+
+# receiving water concentration function ---------------------------------------
+RWC <- function(value, p, dr){
+    
+    RWCval <- list()
+    
+    db <- value %>% 
+        filter(parameter_desc == p &
+               nodi_code != 'B') %>% 
+        select(dmr_value_nmbr)
+    
+    df <- db$dmr_value_nmbr %>%  # sort
+        sort()
+    
+    n <- length(df) # number of samples
+    max <- max(df) # max of samples
+    
+    RWCval$min <- min(df) # min of samples
+    RWCval$n <- n
+    RWCval$max <- max
+    
+    m <- mean(df) %>% # mean
+        round(2)
+    
+    sd <- sd(df) # standard deviation
+    
+    RWCval$m <- m
+    RWCval$sd <- sd
+    
+    # coefficient of variation
+    if (n > 10) {
+        cv <- round(sd/m,2)
+    } else {
+        cv <- 0.6
+    }
+    
+    RWCval$cv <- cv
+    
+    cv2 <- cv^2 # cv squared
+    
+    # for n > 20 use 0.95, else (1 - 0.95)^(1/n)
+    if (n > 20) {
+        x <- (1 - 0.95)^(1/20)
+    } else {
+        x <- (1 - 0.95)^(1/n)}
+    
+    # NEED a log transformed m, sd, and df for z95 and zx???
+    
+    df_ln <- db$dmr_value_nmbr %>%  # sort
+        log()  %>%
+        sort()
+    
+    m_ln <- mean(df_ln) # mean
+    sd_ln <- sd(df_ln) # standard deviation
+    
+    z95 <- ((quantile(df_ln, .95) - m_ln)/sd_ln) %>%  # 95th percentile
+        round(2)
+    zx <- ((quantile(df_ln, x) - m_ln)/sd_ln) %>% 
+        round(2)
+    
+    RWCval$z95 <- z95
+    RWCval$zx <- zx
+    
+    # FROM "notes on PR DMR and RPA Tools" page 5 - on PR Qlick ShapePoint
+    RPM <- (exp(z95*log(1+cv2)^0.5 - (0.5*log(1+cv2)))) / (exp(zx*log(1+cv2)^0.5 - (0.5*log(1+cv2))))
+    # Max Receiving Water Concentration (RWC) = EEQ or max value * n/cv ratio from table * dilution factor
+    
+    RWCval$RPM <- RPM %>% 
+        round(2)
+    
+    RWC <- round(max * unname(RPM) * as.numeric(dr), 1)
+    
+    RWCval$RWC <- RWC %>% 
+        round(2)
+    
+    return(RWCval)
+}
+
+
+# checkbox color formatting code -----------------------------------------------
+# altered from: https://community.rstudio.com/t/colors-next-to-checkboxes-in-shiny/74908/7
+x_format<- function(col,content){
+    paste0('<div style="display:flex"><i class="fa fa-square"
+                                         style="color:',col,';margin-top:3px;"></i><div style="color:black;padding-left:5px;">',content,'</div></div>')
+}
+
+#-------------------------------------------------------------------------------
+# Define server logic 
+shinyServer(function(input, output) {
+
+    
+# Pull facility info from ECHO -------------------------------------------------
+    dfinfo1 <- eventReactive(input$nextBtn, {
+
+        req(input$NPDESID) # BREAK must have NPDES ID and WQS input file
+        
+        feedbackDanger('NPDESID', nchar(input$NPDESID) != 9, # throw error if NPDES isnt 9 char
+                        'please enter a valid NPDES ID',
+                        icon = NA, color = '#b30000')
+        
+        feedbackDanger('NPDESID', substr(input$WQSinput$name, 1, 2) != substr(input$NPDESID, 1, 2),
+                       'please double check the NPDES ID and WQS file',
+                       icon = NA, color = '#b30000')
+        
+        feedbackDanger('WQSinput', file_ext(input$WQSinput$datapath) != 'xlsx', # BREAK if NPDES ID isnt valid
+                       'please upload a properly formatted WQS file',
+                       icon = NA, color = '#b30000')
+
+        req(nchar(input$NPDESID) == 9) # BREAK if NPDES ID isnt 9 char
+        req(substr(input$WQSinput$name, 1, 2) == substr(input$NPDESID, 1, 2))
+        req(file_ext(input$WQSinput$datapath) == 'xlsx') # BREAK check for WQS file upload
+        
+        # showNotification('Let me just pull some files from ICIS-NPDES', type = 'message')
+        
+        echoWaterGetFacilityInfo(p_pid = input$NPDESID,
+                                 output = 'df',
+                                 qcolumns = '1,3,4,5,6,7')
+
+    }, ignoreNULL = FALSE)
+    
+
+# NPDES ID is validity check ---------------------------------------------------
+    dfinfo2 <- reactive({
+        req(dfinfo1()) # BREAK dfinfo1
+        req(input$WQSinput) # BREAK for WQS upload
+        
+        feedbackDanger('NPDESID', nrow(dfinfo1()) != 1, # BREAK if NPDES ID isnt valid
+                       'please enter a valid NPDES ID',
+                       icon = NA, color = '#b30000')
+        
+        req(nrow(dfinfo1()) == 1) # BREAK check if NPDES ID is valid
+        
+        dfinfo1()
+        })
+    
+# Display NPDES ID and Address -------------------------------------------------
+        output$facility <- renderText(dfinfo2()$CWPName)
+        output$street <- renderText(dfinfo2()$CWPStreet)
+        output$citystate <- renderText({paste(dfinfo2()$CWPCity, 
+                                              dfinfo2()$CWPState,
+                                              sep = ', ')})
+        
+### Pull DMR with echor after first next button --------------------------------
+    dmr <- eventReactive(input$nextBtn, {
+        req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
+        echoGetEffluent(p_id = input$NPDESID, # pull DMR
+                        start_date = format(today() %m-% years(5), '%m/%d/%Y'), # 5 years ago
+                        end_date = format(today(), '%m/%d/%Y')) # todays date
+    }, ignoreNULL = FALSE)
+    
+# read WQS file ----------------------------------------------------------------
+    WQSdf <- eventReactive(input$nextBtn, {
+        req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
+        WQSdf <- read_xlsx(input$WQSinput$datapath)
+        return(WQSdf)
+    })
+    
+# Select outfall to use --------------------------------------------------------
+    observeEvent(input$nextBtn,{
+        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+        output$outfallradio <- renderUI({
+                radioButtons('radiob', label = h3('Select the Outfall to Use'),
+                                   choices = unique(dmr()$perm_feature_nmbr))
+                })
+    })
+    
+# BUTTONS ----------------------------------------------------------------------
+# First next button
+
+    output$nextBtn <- renderUI({
+        actionButton('nextBtn', label = strong('Next'))})
+
+    
+# Second next button 
+    observeEvent(input$nextBtn, {
+        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+        output$nextBtn2 <- renderUI(actionButton('nextBtn2', label = strong('Next'))) 
+    })
+
+
+# filter dmr by outfall checkbox, stat base, monitoring location ---------------
+# change dmr value to numeric and monitoring period  to date
+    dmr_of <- eventReactive(input$nextBtn2, {
+        
+        # showNotification('Theyre being a little sus, so....', type = 'message')
+        
+        req(input$radiob)  # BREAK check if outfall is selected
+        
+            dmr() %>%
+                filter(perm_feature_nmbr == as.character(input$radiob) & # checkbox
+                           statistical_base_type_code == 'MAX' & # statistical base type code
+                           monitoring_location_code == 1 & # monitoring location
+                           value_type_code == 'C3' & #concentration based measurements
+                            !(dmr_value_nmbr == '')) %>% # REMOVE dmr_value_nmbr with missing values
+                
+                select(npdes_id, parameter_desc, parameter_code, value_type_code, # select a subset of the database
+                       value_type_desc, monitoring_period_end_date,
+                       dmr_value_nmbr, dmr_unit_desc, value_received_date, nodi_code) %>%
+                
+                mutate(dmr_value_nmbr = as.numeric(dmr_value_nmbr), # change to numeric
+                       monitoring_period_end_date = as.Date(mdy(monitoring_period_end_date, tz = 'EST')))  # change to date)
+    }, ignoreNULL = FALSE)
+    
+
+# Insert tabset for parameters -------------------------------------------------
+# code structure from: https://thatdatatho.com/how-to-create-dynamic-tabs-with-plotly-plots-in-r-shiny/
+    observeEvent(input$nextBtn2, {
+        
+        paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
+
+        output$tabs <- renderUI({ # render UI
+            
+            map(paramtab$nparam, # map over the list of parameters
+                function(p){
+                    
+                    pstats <- RWC(dmr_of(), p, input$DR) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+                    
+                    # dates of RP evaluation
+                    sdate = format(today() %m-% years(5), '%m/%d/%Y') # 5 years ago
+                    edate = format(today(), '%m/%d/%Y') # todays date
+                    
+                    # units - from WQS file
+                    punits <- WQSdf() %>%
+                        filter(PARAMETER_DESC == p) %>%
+                        select(UNIT)
+
+                    # WQS SB
+                    wqsb <- select(filter(WQSdf(),
+                                          PARAMETER_DESC == p), SB)$SB
+                    
+                    #WQS SD
+                    wqsd <- select(filter(WQSdf(),
+                                          PARAMETER_DESC == p), SD)$SD
+
+                    # time series plot
+                    pl <- dmr_of() %>%
+                        filter(parameter_desc == p) %>%
+                        ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr)) +
+                        geom_line(color = '#01665e') +
+                        geom_area(fill = '#c7eae5', alpha = .5) +
+                        xlab('Date') +
+                        ylab(paste(p, '(', punits, ')')) +
+                        theme_light(base_size = 15) +
+                        scale_x_date(date_breaks = '1 year',
+                                     date_labels = '%Y')
+                    
+                    ppl <- reactive({
+                        pl + geom_hline(yintercept = pstats$max,
+                                              color = '#dfc27d', linetype = 'solid') +
+                            geom_hline(yintercept = wqsb,
+                                          color = '#bf812d', linetype = 'dotted') + 
+                            geom_hline(yintercept = wqsd,
+                                          color = '#8c510a', linetype = 'dotdash') +
+                            geom_hline(yintercept = pstats$RWC,
+                                          color = '#543005', linetype = 'longdash')
+                            })
+                    
+                    # ppl <- reactive({pl})
+                
+                    tabPanel(title = h3(p), # tab panel for each parameter
+
+                                     # Dilution Ratio
+                                     # numericInput('DR', label = NULL, width = '25%',
+                                     #           value = 1) # label for text input value
+                                     
+                                     
+                                     fluidRow(
+                                         sidebarLayout(
+                                             sidebarPanel(
+
+                                             # summary statistics table
+                                             h4(renderTable(dmr_of() %>%
+                                                                filter(parameter_desc == p & # parameter
+                                                                           nodi_code != 'B') %>% # remove non-detect
+                                                                summarise(Samples = pstats$n,
+                                                                    # Samples = n(), # n number of samples
+                                                                          Min = pstats$min,
+                                                                          # Min = min(dmr_value_nmbr), # min sample value
+                                                                          # Mean = mean(dmr_value_nmbr), # mean
+                                                                          Mean = pstats$m,
+                                                                          # Max = max(dmr_value_nmbr)
+                                                                          Max = pstats$max
+                                                                          ))), # max sample value
+
+                                             # dilution ratio text input
+                                             h4(renderText('Dilution Ratio : ')),
+
+                                             numericInput('DR', label = NULL, width = '25%',
+                                                       value = 1), # label for text input value
+
+                                             checkboxInput('Maxbox', label = HTML(x_format('#dfc27d', h4(paste('Max Value : ', pstats$max, ' ', punits)))),
+                                                           value = FALSE),
+
+                                             checkboxInput('SBxbox', label = HTML(x_format('#bf812d', h4(paste('WQS - SB :', wqsb, ' ', punits)))),
+                                                                value = FALSE),
+
+                                             checkboxInput('SDxbox', label = HTML(x_format('#8c510a',h4(paste('WQS - SD :', wqsd, ' ', punits)))),
+                                                           value = FALSE),
+
+                                             checkboxInput('RWCxbox', label = HTML(x_format('#543005',h4(paste('RWC : ', pstats$RWC, ' ', punits)))),
+                                                           value = FALSE),
+
+                                             width = 4), # width of the panel
+                                             
+                                         # time series plot
+                                         mainPanel(
+                                             
+                                             output$pplot <- renderPlotly({
+                                             
+                                             # ONLY runs on the first parameter checkbox -> isnt recognizing checkbox for each parameter
+                                             if (input$Maxbox == TRUE) {
+                                                 pl <- pl + geom_hline(yintercept = pstats$max,
+                                                                       color = '#dfc27d', linetype = 'solid')}
+
+                                             if (input$SBxbox == TRUE) {
+                                                 pl <- pl + geom_hline(yintercept = wqsb,
+                                                                       color = '#bf812d', linetype = 'dotted')}
+
+                                             if (input$SDxbox == TRUE) {
+                                                 pl <- pl + geom_hline(yintercept = wqsd,
+                                                                       color = '#8c510a', linetype = 'dotdash')}
+
+                                             if (input$RWCxbox == TRUE) {
+                                                 pl <- pl + geom_hline(yintercept = pstats$RWC,
+                                                                       color = '#543005', linetype = 'longdash')
+
+                                             } else { pl }
+                                         
+                                             ggplotly(pl)
+                                             })
+
+                                         ) # Main Panel
+                                         ),
+                                         
+                                         
+                                         column(2, offset = 10,
+                                                
+# Rmd Report download ----------------------------------------------------------
+                                                output$parport <- downloadHandler(
+                                                    filename = paste0(input$NPDESID, 
+                                                                      '_', input$radiob, '_',p,' RP Report.pdf'),
+                                                    content = function(file){ # copy report to temp directory
+                                                        tempReport <- file.path(tempdir(), 'Report.Rmd')
+                                                        file.copy('Report.Rmd', tempReport, overwrite = TRUE)
+                                                        
+                                                        # set up parameters
+                                                        params <- list(sdat = sdate,
+                                                                       edat = edate,
+                                                                       NPDES = input$NPDESID,
+                                                                       fac = dfinfo2()$CWPName,
+                                                                       street = dfinfo2()$CWPStreet,
+                                                                       citystate = paste(dfinfo2()$CWPCity, 
+                                                                                         dfinfo2()$CWPState,
+                                                                                         sep = ', '),
+                                                                       outfall = input$radiob,
+                                                                       WQSfile = input$WQSinput$name,
+                                                                       param = p,
+                                                                       unts = punits,
+                                                                       nsam = pstats$n,
+                                                                       pmn = pstats$min,
+                                                                       pmean = pstats$mean,
+                                                                       pmx = pstats$max,
+                                                                       RWC = pstats$RWC,
+                                                                       pcv = pstats$cv,
+                                                                       pz95 = pstats$z95,
+                                                                       pzx = pstats$zx,
+                                                                       RPM = pstats$RPM,
+                                                                       DR = input$DR,
+                                                                       WQSB = wqsb,
+                                                                       WQSD = wqsd,
+                                                                       pplot = ppl())
+                                                        
+                                                        rmarkdown::render(tempReport, output_file = file,
+                                                                          params = params,
+                                                                          envir = new.env(parent = globalenv()))
+                                                    })
+# ------------------------------------------------------------------------------
+                                                ) # end column
+                                     ) # fluidRow
+                                  )# end map
+                    
+                }) -> gap
+            do.call(what = tabsetPanel,
+                    args = gap %>%
+                        append(list(type = 'pills',
+                                    id   = 'param_tabs')))
+        })
+    }) # end of tabset
+
+    
+    # observeEvent(input$DR, {
+    #     updateNumericInput(inputId = 'DR')
+    # })
+})
