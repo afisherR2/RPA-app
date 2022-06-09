@@ -89,11 +89,8 @@ shinyUI(
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
 	     <p> <b>Created by Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Data Management Coordinator</b></p>
-       <p> <b>Version ALPHA, Last Updated May 31, 2022</b></p>
-          
-          
+       <p> <b>Version ALPHA, Last Updated July 9, 2022</b></p>
 
-       <p> Test IDs: PR0020486     NJ0020141</p>
 	   </div>
 	   </div>
 	   </div>
@@ -161,7 +158,7 @@ shinyUI(
 
 	    column(4, offset = 1,
 	           textInput('NPDESID', label = h3('NPDES ID Input'),
-	                     value = 'NJ0020141')),
+	                     value = 'PR0020486')),
 	    
 	  
 	    column(4, offest = 1,
