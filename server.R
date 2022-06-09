@@ -252,7 +252,7 @@ shinyServer(function(input, output) {
                         filter(parameter_desc == p) %>%
                         ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr)) +
                         geom_line(color = '#01665e') +
-                        geom_area(fill = '#c7eae5', alpha = .5) +
+                        geom_area(position = position_dodge(NULL), fill = '#c7eae5', alpha = .5) +
                         xlab('Date') +
                         ylab(paste(p, '(', punits, ')')) +
                         theme_light(base_size = 15) +
@@ -287,15 +287,11 @@ shinyServer(function(input, output) {
                                              h4(renderTable(dmr_of() %>%
                                                                 filter(parameter_desc == p & # parameter
                                                                            nodi_code != 'B') %>% # remove non-detect
-                                                                summarise(Samples = pstats$n,
-                                                                    # Samples = n(), # n number of samples
-                                                                          Min = pstats$min,
-                                                                          # Min = min(dmr_value_nmbr), # min sample value
-                                                                          # Mean = mean(dmr_value_nmbr), # mean
-                                                                          Mean = pstats$m,
-                                                                          # Max = max(dmr_value_nmbr)
-                                                                          Max = pstats$max
-                                                                          ))), # max sample value
+                                                                summarise(Samples = pstats$n, # n number of samples
+                                                                          Min = pstats$min, # min sample value
+                                                                          Mean = pstats$m, # mean
+                                                                          Max = pstats$max # max sample value
+                                                                          ))), 
 
                                              # dilution ratio text input
                                              h4(renderText('Dilution Ratio : ')),
@@ -317,10 +313,12 @@ shinyServer(function(input, output) {
 
                                              width = 4), # width of the panel
                                              
-                                         # time series plot
+                                         # time series plot --------------------
+                                         # NEED to test ggplot on scratch paper to iron out mismatched area and line
                                          mainPanel(
                                              
                                              output$pplot <- renderPlotly({
+                                             
                                              
                                              # ONLY runs on the first parameter checkbox -> isnt recognizing checkbox for each parameter
                                              if (input$Maxbox == TRUE) {
@@ -340,7 +338,7 @@ shinyServer(function(input, output) {
                                                                        color = '#543005', linetype = 'longdash')
 
                                              } else { pl }
-                                         
+                                                 
                                              ggplotly(pl)
                                              })
 
