@@ -168,13 +168,13 @@ shinyUI(
 	           )),
 	
 # First NEXT button
-fluidRow(
-  column(2, offset = 10,
-         uiOutput('nextBtn'))),
-
-	br(),
-	br(),
-	hr(),
+  fluidRow(
+    column(2, offset = 10,
+           uiOutput('nextBtn'))),
+  
+  	br(),
+  	br(),
+  	hr(),
 	
 # LARGE NPDES ID and Address
 # other information to add???
@@ -207,13 +207,30 @@ fluidRow(
 	
 
 # tabset for each parameter
-  fluidRow(
-      column(11, offset = 1,
-            uiOutput('tabs'))),
 
-# fluidRow(
-#   column(2, offset = 10,
-#          downloadButton('parport', 'Download'))),
+  fluidRow(
+    column(12,
+           uiOutput('tabs'))
+  ),
+
+  fluidRow(
+      
+      column(2,  offset = 1,
+             uiOutput('pMaxbox')),
+      
+      column(2,
+             uiOutput('pSBxbox')),
+      
+      column(2,
+             uiOutput('pSDxbox')),
+      
+      column(2,
+             uiOutput('pRWCxbox')),
+      
+      column(2,
+             uiOutput('pdr'))
+  ),
+
   br(),
   br(),
   br(),	
