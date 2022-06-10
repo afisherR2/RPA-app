@@ -222,7 +222,7 @@ shinyServer(function(input, output) {
     observeEvent(input$nextBtn2, {
         
         paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
-
+        
         output$tabs <- renderUI({ # render UI
             
             map(paramtab$nparam, # map over the list of parameters
@@ -296,9 +296,10 @@ shinyServer(function(input, output) {
                                              # dilution ratio text input
                                              h4(renderText('Dilution Ratio : ')),
 
+                                             
                                              numericInput('DR', label = NULL, width = '25%',
                                                        value = 1), # label for text input value
-
+                                             
                                              checkboxInput('Maxbox', label = HTML(x_format('#dfc27d', h4(paste('Max Value : ', pstats$max, ' ', punits)))),
                                                            value = FALSE),
 
@@ -310,7 +311,7 @@ shinyServer(function(input, output) {
 
                                              checkboxInput('RWCxbox', label = HTML(x_format('#543005',h4(paste('RWC : ', pstats$RWC, ' ', punits)))),
                                                            value = FALSE),
-
+                                             
                                              width = 4), # width of the panel
                                              
                                          # time series plot --------------------
@@ -390,6 +391,7 @@ shinyServer(function(input, output) {
 # ------------------------------------------------------------------------------
                                                 ) # end column
                                      ) # fluidRow
+
                                   )# end map
                     
                 }) -> gap
@@ -398,9 +400,13 @@ shinyServer(function(input, output) {
                         append(list(type = 'pills',
                                     id   = 'param_tabs')))
         })
+        
+        # outputOptions(output, 'tabs', suspendWhenHidden = FALSE)
+        
     }) # end of tabset
-
     
+    
+
     # observeEvent(input$DR, {
     #     updateNumericInput(inputId = 'DR')
     # })
