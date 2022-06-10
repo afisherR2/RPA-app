@@ -221,6 +221,32 @@ shinyServer(function(input, output) {
 # code structure from: https://thatdatatho.com/how-to-create-dynamic-tabs-with-plotly-plots-in-r-shiny/
     observeEvent(input$nextBtn2, {
         
+        output$pdr <- renderUI(
+            numericInput('DR', 
+                         label = 'Dilution Ratio', width = '50%',
+                         value = 1))
+            
+        output$pMaxbox <- renderUI(
+            checkboxInput('Maxbox', 
+                          label = HTML(x_format('#dfc27d', h4(paste('Max Value')))),
+                          value = FALSE))
+        
+        output$pSBxbox <- renderUI(
+            checkboxInput('SBxbox', 
+                          label = HTML(x_format('#bf812d', h4(paste('WQS - SB')))),
+                          value = FALSE))
+        
+        output$pSDxbox <- renderUI(
+            checkboxInput('SDxbox', 
+                          label = HTML(x_format('#8c510a',h4(paste('WQS - SD')))),
+                          value = FALSE))
+        
+        output$pRWCxbox <- renderUI(
+            checkboxInput('RWCxbox', 
+                          label = HTML(x_format('#543005',h4(paste('RWC')))),
+                          value = FALSE))
+            
+        
         paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
         
         output$tabs <- renderUI({ # render UI
@@ -283,34 +309,67 @@ shinyServer(function(input, output) {
                                          sidebarLayout(
                                              sidebarPanel(
 
-                                             # summary statistics table
-                                             h4(renderTable(dmr_of() %>%
-                                                                filter(parameter_desc == p & # parameter
-                                                                           nodi_code != 'B') %>% # remove non-detect
-                                                                summarise(Samples = pstats$n, # n number of samples
-                                                                          Min = pstats$min, # min sample value
-                                                                          Mean = pstats$m, # mean
-                                                                          Max = pstats$max # max sample value
-                                                                          ))), 
-
-                                             # dilution ratio text input
-                                             h4(renderText('Dilution Ratio : ')),
-
+                                             h4(strong(renderText('Summary Stats'))),
                                              
-                                             numericInput('DR', label = NULL, width = '25%',
-                                                       value = 1), # label for text input value
+                                             br(),
                                              
-                                             checkboxInput('Maxbox', label = HTML(x_format('#dfc27d', h4(paste('Max Value : ', pstats$max, ' ', punits)))),
-                                                           value = FALSE),
+                                             h5(renderText(
+                                                 paste('# Samples : ',
+                                                       pstats$n))),
+                                             
+                                             h5(renderText(
+                                                 paste('Min : ',
+                                                       pstats$min, ' ',
+                                                       punits))),
+                                             
+                                             h5(renderText(
+                                                 paste('Mean : ',
+                                                       pstats$m, ' ',
+                                                       punits))),
+                                                 
+                                             
+                                             h5(renderText(
+                                                 paste('Max : ',
+                                                      pstats$max, ' ',
+                                                      punits))),
+                                             
+                                             br(),
+                                             
+                                             h5(renderText(
+                                                 paste('WQS - SB :',
+                                                       wqsb, ' ', 
+                                                       punits))),
+                                             
+                                             h5(renderText(
+                                                 paste('WQS - SD :', 
+                                                       wqsd, ' ', 
+                                                       punits))),
+                                             
+                                             br(),
+                                             
+                                             h5(renderText(
+                                                 paste('RWC : ', 
+                                                       pstats$RWC, ' ', 
+                                                       punits))),
 
-                                             checkboxInput('SBxbox', label = HTML(x_format('#bf812d', h4(paste('WQS - SB :', wqsb, ' ', punits)))),
-                                                                value = FALSE),
-
-                                             checkboxInput('SDxbox', label = HTML(x_format('#8c510a',h4(paste('WQS - SD :', wqsd, ' ', punits)))),
-                                                           value = FALSE),
-
-                                             checkboxInput('RWCxbox', label = HTML(x_format('#543005',h4(paste('RWC : ', pstats$RWC, ' ', punits)))),
-                                                           value = FALSE),
+                                             # # dilution ratio text input
+                                             # h4(renderText('Dilution Ratio : ')),
+                                             # 
+                                             # 
+                                             # numericInput('DR', label = NULL, width = '25%',
+                                             #           value = 1), # label for text input value
+                                             # 
+                                             # checkboxInput('Maxbox', label = HTML(x_format('#dfc27d', h4(paste('Max Value : ', pstats$max, ' ', punits)))),
+                                             #               value = FALSE),
+                                             # 
+                                             # checkboxInput('SBxbox', label = HTML(x_format('#bf812d', h4(paste('WQS - SB :', wqsb, ' ', punits)))),
+                                             #                    value = FALSE),
+                                             # 
+                                             # checkboxInput('SDxbox', label = HTML(x_format('#8c510a',h4(paste('WQS - SD :', wqsd, ' ', punits)))),
+                                             #               value = FALSE),
+                                             # 
+                                             # checkboxInput('RWCxbox', label = HTML(x_format('#543005',h4(paste('RWC : ', pstats$RWC, ' ', punits)))),
+                                             #               value = FALSE),
                                              
                                              width = 4), # width of the panel
                                              
@@ -320,8 +379,6 @@ shinyServer(function(input, output) {
                                              
                                              output$pplot <- renderPlotly({
                                              
-                                             
-                                             # ONLY runs on the first parameter checkbox -> isnt recognizing checkbox for each parameter
                                              if (input$Maxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = pstats$max,
                                                                        color = '#dfc27d', linetype = 'solid')}
@@ -346,10 +403,9 @@ shinyServer(function(input, output) {
                                          ) # Main Panel
                                          ),
                                          
-                                         
-                                         column(2, offset = 10,
-                                                
 # Rmd Report download ----------------------------------------------------------
+                                         column(2, offset = 10, # download button placement
+
                                                 output$parport <- downloadHandler(
                                                     filename = paste0(input$NPDESID, 
                                                                       '_', input$radiob, '_',p,' RP Report.pdf'),
@@ -388,8 +444,9 @@ shinyServer(function(input, output) {
                                                                           params = params,
                                                                           envir = new.env(parent = globalenv()))
                                                     })
-# ------------------------------------------------------------------------------
+
                                                 ) # end column
+# ------------------------------------------------------------------------------
                                      ) # fluidRow
 
                                   )# end map
