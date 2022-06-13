@@ -89,7 +89,7 @@ shinyUI(
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
 	     <p> <b>Created by Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Data Management Coordinator</b></p>
-       <p> <b>Version ALPHA, Last Updated July 9, 2022</b></p>
+       <p> <b>Version ALPHA, Last Updated June 13, 2022</b></p>
 
 	   </div>
 	   </div>
@@ -184,8 +184,8 @@ shinyUI(
 	    
 	    column(5,
 	           # h3(textOutput('dfnpdesid')),
-	           h3(textOutput('street')),
-	           h3(textOutput('citystate')))),
+	           h2(textOutput('street')),
+	           h2(textOutput('citystate')))),
 	
 	
 # Select outfall to use ONLY if there are more than one
@@ -212,10 +212,16 @@ shinyUI(
     column(12,
            uiOutput('tabs'))
   ),
+  
+  br(),
+  
 
   fluidRow(
       
-      column(2,  offset = 1,
+      column(3, offset = 1,
+             uiOutput('pdr')),
+      
+      column(2,
              uiOutput('pMaxbox')),
       
       column(2,
@@ -225,10 +231,7 @@ shinyUI(
              uiOutput('pSDxbox')),
       
       column(2,
-             uiOutput('pRWCxbox')),
-      
-      column(2,
-             uiOutput('pdr'))
+             uiOutput('pRWCxbox'))
   ),
 
   br(),

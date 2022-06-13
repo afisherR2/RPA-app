@@ -176,7 +176,7 @@ shinyServer(function(input, output) {
     observeEvent(input$nextBtn,{
         req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
         output$outfallradio <- renderUI({
-                radioButtons('radiob', label = h3('Select the Outfall to Use'),
+                radioButtons('radiob', label = h2('Select Outfall to Use'),
                                    choices = unique(dmr()$perm_feature_nmbr))
                 })
     })
@@ -221,29 +221,30 @@ shinyServer(function(input, output) {
 # code structure from: https://thatdatatho.com/how-to-create-dynamic-tabs-with-plotly-plots-in-r-shiny/
     observeEvent(input$nextBtn2, {
         
+        
         output$pdr <- renderUI(
             numericInput('DR', 
-                         label = 'Dilution Ratio', width = '50%',
+                         label = h3('Dilution Ratio:'), width = '50%',
                          value = 1))
             
         output$pMaxbox <- renderUI(
             checkboxInput('Maxbox', 
-                          label = HTML(x_format('#dfc27d', h4(paste('Max Value')))),
+                          label = HTML(x_format('#dfc27d', h3(paste('Max Value')))),
                           value = FALSE))
         
         output$pSBxbox <- renderUI(
             checkboxInput('SBxbox', 
-                          label = HTML(x_format('#bf812d', h4(paste('WQS - SB')))),
+                          label = HTML(x_format('#bf812d', h3(paste('WQS - SB')))),
                           value = FALSE))
         
         output$pSDxbox <- renderUI(
             checkboxInput('SDxbox', 
-                          label = HTML(x_format('#8c510a',h4(paste('WQS - SD')))),
+                          label = HTML(x_format('#8c510a',h3(paste('WQS - SD')))),
                           value = FALSE))
         
         output$pRWCxbox <- renderUI(
             checkboxInput('RWCxbox', 
-                          label = HTML(x_format('#543005',h4(paste('RWC')))),
+                          label = HTML(x_format('#543005',h3(paste('RWC')))),
                           value = FALSE))
             
         
