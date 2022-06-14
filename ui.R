@@ -129,8 +129,9 @@ shinyUI(
           as defined in EPA’s 1991 Technical Support Document. The Receiving Water Concentration
           calculations assume a 95% confidence level and a 95% probability basis.
           
-          The app specifically focuses on reported daily maximum (statistical base type code = MAX),
-          discharge from monitoring location code 1, and concentration based discharge. 
+          The app specifically focuses on reported daily maximum effluent (statistical base type code = MAX),
+          discharge from monitoring location code 1, discharge from external outfalls,
+          and concentration based discharge. 
           Non-detect values are NOT represented in this analysis. Discharge data for
           the previous 5 years is extracted from ECHO.
           
