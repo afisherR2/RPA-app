@@ -175,9 +175,15 @@ shinyServer(function(input, output) {
 # Select outfall to use --------------------------------------------------------
     observeEvent(input$nextBtn,{
         req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+        
+        otfl <- dmr() %>%  # filter for only internal outfalls
+            filter(perm_feature_type_code == 'EXO') %>% 
+            select(perm_feature_nmbr) %>% 
+            distinct()
+        
         output$outfallradio <- renderUI({
                 radioButtons('radiob', label = h2('Select Outfall to Use'),
-                                   choices = unique(dmr()$perm_feature_nmbr))
+                                   choices = otfl$perm_feature_nmbr)
                 })
     })
     
@@ -205,7 +211,8 @@ shinyServer(function(input, output) {
                 filter(perm_feature_nmbr == as.character(input$radiob) & # checkbox
                            statistical_base_type_code == 'MAX' & # statistical base type code
                            monitoring_location_code == 1 & # monitoring location
-                           value_type_code == 'C3' & #concentration based measurements
+                           value_type_code == 'C3' & # concentration based measurements
+                           perm_feature_type_code == 'EXO' & # external outfall
                             !(dmr_value_nmbr == '')) %>% # REMOVE dmr_value_nmbr with missing values
                 
                 select(npdes_id, parameter_desc, parameter_code, value_type_code, # select a subset of the database
