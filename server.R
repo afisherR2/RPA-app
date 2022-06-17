@@ -95,6 +95,12 @@ RWC <- function(value, p, dr){
 
 # checkbox color formatting code -----------------------------------------------
 # altered from: https://community.rstudio.com/t/colors-next-to-checkboxes-in-shiny/74908/7
+
+# dashed # fa-solid fa-hyphen
+# dotted # fas fa-ellipsis-h
+# dashdot # fa-solid fa-period   combine with hyphen?
+# solid # fa-solid fa-horizontal-rule
+
 x_format<- function(col,content){
     paste0('<div style="display:flex"><i class="fa fa-square"
                                          style="color:',col,';margin-top:3px;"></i><div style="color:black;padding-left:5px;">',content,'</div></div>')
@@ -236,22 +242,22 @@ shinyServer(function(input, output) {
             
         output$pMaxbox <- renderUI(
             checkboxInput('Maxbox', 
-                          label = HTML(x_format('#dfc27d', h3(paste('Max Value')))),
+                          label = HTML(x_format('#dfc27d', h3('Max Value'))),
                           value = FALSE))
         
         output$pSBxbox <- renderUI(
             checkboxInput('SBxbox', 
-                          label = HTML(x_format('#bf812d', h3(paste('WQS - SB')))),
+                          label = HTML(x_format('#bf812d', h3('WQS - SB'))),
                           value = FALSE))
         
         output$pSDxbox <- renderUI(
             checkboxInput('SDxbox', 
-                          label = HTML(x_format('#8c510a',h3(paste('WQS - SD')))),
+                          label = HTML(x_format('#8c510a',h3('WQS - SD'))),
                           value = FALSE))
         
         output$pRWCxbox <- renderUI(
             checkboxInput('RWCxbox', 
-                          label = HTML(x_format('#543005',h3(paste('RWC')))),
+                          label = HTML(x_format('#543005',h3('RWC'))),
                           value = FALSE))
             
         
@@ -291,7 +297,7 @@ shinyServer(function(input, output) {
                         ylab(paste(p, '(', punits, ')')) +
                         theme_light(base_size = 15) +
                         scale_x_date(date_breaks = '1 year',
-                                     date_labels = '%Y')
+                                     date_labels = '%Y') 
                     
                     ppl <- reactive({
                         pl + geom_hline(yintercept = pstats$max,
