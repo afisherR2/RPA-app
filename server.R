@@ -307,18 +307,12 @@ shinyServer(function(input, output) {
                             geom_hline(yintercept = wqsd,
                                           color = '#8c510a', linetype = 'dotdash') +
                             geom_hline(yintercept = pstats$RWC,
-                                          color = '#543005', linetype = 'longdash')
+                                          color = '#543005', linetype = 'longdash') +
+                            theme(legend.position = 'bottom')
                             })
-                    
-                    # ppl <- reactive({pl})
                 
                     tabPanel(title = h3(p), # tab panel for each parameter
 
-                                     # Dilution Ratio
-                                     # numericInput('DR', label = NULL, width = '25%',
-                                     #           value = 1) # label for text input value
-                                     
-                                     
                                      fluidRow(
                                          sidebarLayout(
                                              sidebarPanel(
@@ -341,7 +335,6 @@ shinyServer(function(input, output) {
                                                        pstats$m, ' ',
                                                        punits))),
                                                  
-                                             
                                              h5(renderText(
                                                  paste('Max : ',
                                                       pstats$max, ' ',
@@ -366,25 +359,6 @@ shinyServer(function(input, output) {
                                                        pstats$RWC, ' ', 
                                                        punits))),
 
-                                             # # dilution ratio text input
-                                             # h4(renderText('Dilution Ratio : ')),
-                                             # 
-                                             # 
-                                             # numericInput('DR', label = NULL, width = '25%',
-                                             #           value = 1), # label for text input value
-                                             # 
-                                             # checkboxInput('Maxbox', label = HTML(x_format('#dfc27d', h4(paste('Max Value : ', pstats$max, ' ', punits)))),
-                                             #               value = FALSE),
-                                             # 
-                                             # checkboxInput('SBxbox', label = HTML(x_format('#bf812d', h4(paste('WQS - SB :', wqsb, ' ', punits)))),
-                                             #                    value = FALSE),
-                                             # 
-                                             # checkboxInput('SDxbox', label = HTML(x_format('#8c510a',h4(paste('WQS - SD :', wqsd, ' ', punits)))),
-                                             #               value = FALSE),
-                                             # 
-                                             # checkboxInput('RWCxbox', label = HTML(x_format('#543005',h4(paste('RWC : ', pstats$RWC, ' ', punits)))),
-                                             #               value = FALSE),
-                                             
                                              width = 4), # width of the panel
                                              
                                          # time series plot --------------------
