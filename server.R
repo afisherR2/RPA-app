@@ -274,18 +274,38 @@ shinyServer(function(input, output) {
                     sdate = format(today() %m-% years(5), '%m/%d/%Y') # 5 years ago
                     edate = format(today(), '%m/%d/%Y') # todays date
                     
-                    # units - from WQS file
-                    punits <- WQSdf() %>%
-                        filter(PARAMETER_DESC == p) %>%
-                        select(UNIT)
+                    # units - from DMR file
+                    punits <- dmr_of() %>%
+                        filter(parameter_desc == p) %>%
+                        select(dmr_unit_desc) %>% 
+                        unique()
 
                     # WQS SB
+                    
                     wqsb <- select(filter(WQSdf(),
                                           PARAMETER_DESC == p), SB)$SB
                     
+                    # if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
+                    #     wqsb <- select(filter(WQSdf(),
+                    #                           PARAMETER_DESC == p), SB)$SB
+                    # }
+                    # else {
+                    #     wqsb <- NA
+                    # }
+
+                    
                     #WQS SD
+                    
                     wqsd <- select(filter(WQSdf(),
                                           PARAMETER_DESC == p), SD)$SD
+                    
+                    # if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
+                    #     wqsd <- select(filter(WQSdf(),
+                    #                           PARAMETER_DESC == p), SD)$SD
+                    # } 
+                    # else {
+                    #     wqsd <- NA
+                    # }
 
                     # time series plot
                     pl <- dmr_of() %>%
@@ -302,12 +322,18 @@ shinyServer(function(input, output) {
                     ppl <- reactive({
                         pl + geom_hline(yintercept = pstats$max,
                                               color = '#dfc27d', linetype = 'solid') +
-                            geom_hline(yintercept = wqsb,
-                                          color = '#bf812d', linetype = 'dotted') + 
-                            geom_hline(yintercept = wqsd,
-                                          color = '#8c510a', linetype = 'dotdash') +
                             geom_hline(yintercept = pstats$RWC,
                                           color = '#543005', linetype = 'longdash') +
+                            geom_hline(yintercept = wqsb,
+                                       color = '#bf812d', linetype = 'dotted') +
+                            geom_hline(yintercept = wqsd,
+                                       color = '#8c510a', linetype = 'dotdash') +
+                            
+                            # geom_hline(yintercept = ifelse(is.na(wqsb) == FALSE, wqsb, pstats$RWC),
+                            #            color = '#bf812d', linetype = 'dotted') +
+                            # geom_hline(yintercept = ifelse(is.na(wqsd) == FALSE, wqsd, pstats$RWC),
+                            #            color = '#8c510a', linetype = 'dotdash')
+                            
                             theme(legend.position = 'bottom')
                             })
                 
@@ -374,10 +400,14 @@ shinyServer(function(input, output) {
                                              if (input$SBxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = wqsb,
                                                                        color = '#bf812d', linetype = 'dotted')}
+                                                 
+                                                 # && is.na(wqsb) == FALSE
 
                                              if (input$SDxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = wqsd,
                                                                        color = '#8c510a', linetype = 'dotdash')}
+                                                 
+                                                 # && is.na(wqsd) == FALSE
 
                                              if (input$RWCxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = pstats$RWC,
