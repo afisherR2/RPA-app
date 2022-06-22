@@ -26,6 +26,7 @@ params:
   WQSB: NA
   WQSD: NA
   pplot:
+  dmrr:
 output: pdf_document
 header-includes: \usepackage{xcolor}
 ---
@@ -103,3 +104,11 @@ RPM & = \displaystyle \frac{exp(`r params$pz95`\ln(1 + `r params$pcv`^{2})^{0.5}
 RWC & = `r params$pmx` * `r params$RPM` * `r params$DR`\\
  & = `r params$RWC`
 \end{align*}
+
+\newpage
+
+***
+### **DATA TABLE**
+```{r}
+knitr::kable(params$dmrr)
+```

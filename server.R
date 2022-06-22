@@ -221,9 +221,9 @@ shinyServer(function(input, output) {
                            perm_feature_type_code == 'EXO' & # external outfall
                             !(dmr_value_nmbr == '')) %>% # REMOVE dmr_value_nmbr with missing values
                 
-                select(npdes_id, parameter_desc, parameter_code, value_type_code, # select a subset of the database
+                select(npdes_id, parameter_desc, perm_feature_nmbr, parameter_code, value_type_code, # select a subset of the database
                        value_type_desc, monitoring_period_end_date,
-                       dmr_value_nmbr, dmr_unit_desc, value_received_date, nodi_code) %>%
+                       dmr_value_nmbr, dmr_unit_desc, nodi_code) %>%
                 
                 mutate(dmr_value_nmbr = as.numeric(dmr_value_nmbr), # change to numeric
                        monitoring_period_end_date = as.Date(mdy(monitoring_period_end_date, tz = 'EST')), # change to date
@@ -282,15 +282,7 @@ shinyServer(function(input, output) {
                             select(dmr_unit_desc) %>%
                             unique()
                     
-                        
-                    # punits <- dmr_of() %>%
-                    #     filter(parameter_desc == p) %>%
-                    #     select(dmr_unit_desc) %>%
-                    #     unique()
-                    
-                    
                     # WQS SB
-                    
                     if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
                         wqsb <- select(filter(WQSdf(),
                                               PARAMETER_DESC == p), SB)$SB
@@ -301,7 +293,6 @@ shinyServer(function(input, output) {
 
                     
                     #WQS SD
-                    
                     if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
                         wqsd <- select(filter(WQSdf(),
                                               PARAMETER_DESC == p), SD)$SD
@@ -310,7 +301,7 @@ shinyServer(function(input, output) {
                         wqsd <- NA
                     }
 
-                    # time series plot
+                    # time series plot ui display
                     pl <- dmr_of() %>%
                         filter(parameter_desc == p) %>%
                         ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr)) +
@@ -322,6 +313,7 @@ shinyServer(function(input, output) {
                         scale_x_date(date_breaks = '1 year',
                                      date_labels = '%Y') 
                     
+                    # time series plot for report
                     ppl <- reactive({
                         pl + geom_hline(yintercept = pstats$max,
                                               color = '#dfc27d', linetype = 'solid') +
@@ -337,10 +329,21 @@ shinyServer(function(input, output) {
                                        color = '#8c510a', linetype = 'dotdash')
                             })
                     
+                    # data table for report with select columns and modified names
                     rdmr <- reactive({
                         rdmr.r <- dmr_of() %>% 
                                     filter(parameter_desc == p) %>% 
-                                    as_tibble()
+                                    as_tibble() %>% 
+                            select(npdes_id, perm_feature_nmbr, parameter_desc,
+                                   monitoring_period_end_date, dmr_value_nmbr, 
+                                   dmr_unit_desc, nodi_code) %>% 
+                            rename(`NPDES ID` = npdes_id) %>% 
+                            rename(Outfall = perm_feature_nmbr) %>% 
+                            rename(Parameter = parameter_desc) %>% 
+                            rename(`Monitoring Period` = monitoring_period_end_date) %>% 
+                            rename(Value = dmr_value_nmbr) %>% 
+                            rename(Unit = dmr_unit_desc) %>% 
+                            rename(`NODI Code` = nodi_code)
                     })
                 
                     tabPanel(title = h3(p), # tab panel for each parameter
@@ -393,8 +396,7 @@ shinyServer(function(input, output) {
 
                                              width = 4), # width of the panel
                                              
-                                         # time series plot --------------------
-                                         # NEED to test ggplot on scratch paper to iron out mismatched area and line
+                                         # modify time series plot by checkbox input
                                          mainPanel(
                                              
                                              output$pplot <- renderPlotly({
@@ -458,7 +460,8 @@ shinyServer(function(input, output) {
                                                                        DR = input$DR,
                                                                        WQSB = wqsb,
                                                                        WQSD = wqsd,
-                                                                       pplot = ppl())
+                                                                       pplot = ppl(),
+                                                                       dmrr = rdmr())
                                                         
                                                         rmarkdown::render(tempReport, output_file = file,
                                                                           params = params,
