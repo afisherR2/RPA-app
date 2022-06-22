@@ -62,9 +62,6 @@ knitr::opts_chunk$set(echo = FALSE)
 #### Min: `r params$pmn` `r params$unts`
 #### Mean: `r params$pmean` `r params$unts`
 #### \textcolor{maxcolor}{Max: `r params$pmx` `r params$unts`}
-
-***
-### **TIME SERIES AND WQS**
 #### \textcolor{sbcolor}{WQS - SB: `r params$WQSB` `r params$unts`}
 #### \textcolor{sdcolor}{WQS - SD: `r params$WQSD` `r params$unts`}
 #### \textcolor{rwccolor}{RWC: `r params$RWC` `r params$unts`}
@@ -72,15 +69,18 @@ knitr::opts_chunk$set(echo = FALSE)
 
 
 ***
+### **TIME SERIES**
 ```{r}
 params$pplot
 ```
 
+\newpage
 
 ***
 ### **RECEIVING WATER CONCENTRATION CALCULATIONS**
-#### **calculations from 1991 Technical Support Document pgs 51-55**
-#### **assuming a 95% confidence level and a 95% probability basis**
+#### *assuming a 95% confidence level and a 95% probability basis*\
+*calculations from 1991 Technical Support Document pgs 51-55*
+\
 \begin{align*}
 Number of samples & = n\\
 Maximum effluent concentration & = max\\
