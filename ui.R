@@ -131,9 +131,10 @@ shinyUI(
           
           The app specifically focuses on reported daily maximum effluent (statistical base type code = MAX),
           discharge from monitoring location code 1, discharge from external outfalls,
-          and concentration based discharge. 
+          and only concentration based discharge. 
           Non-detect values are NOT represented in this analysis. Discharge data for
-          the previous 5 years is extracted from ECHO.
+          the previous 5 years is extracted from ECHO, and is taken AS IS - no data cleaning
+          or scrubbing has been performed.
           
           Disclaimer: No warranty, express or implied, is 
           made by EPA or any other agency of the U.S. Government regarding the 

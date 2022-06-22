@@ -79,6 +79,7 @@ params$pplot
 
 ***
 ### **RECEIVING WATER CONCENTRATION CALCULATIONS**
+#### **calculations from 1991 Technical Support Document pg 51-54**
 #### **assuming a 95% confidence level and a 95% probability basis**
 \begin{align*}
 Number of samples & = n\\
