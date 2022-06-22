@@ -226,7 +226,9 @@ shinyServer(function(input, output) {
                        dmr_value_nmbr, dmr_unit_desc, value_received_date, nodi_code) %>%
                 
                 mutate(dmr_value_nmbr = as.numeric(dmr_value_nmbr), # change to numeric
-                       monitoring_period_end_date = as.Date(mdy(monitoring_period_end_date, tz = 'EST')))  # change to date)
+                       monitoring_period_end_date = as.Date(mdy(monitoring_period_end_date, tz = 'EST')), # change to date
+                       dmr_unit_desc = recode(dmr_unit_desc,
+                                               `#/100mL` = 'MPN/100mL'))
     }, ignoreNULL = FALSE)
     
 
@@ -275,11 +277,18 @@ shinyServer(function(input, output) {
                     edate = format(today(), '%m/%d/%Y') # todays date
                     
                     # units - from DMR file
-                    punits <- dmr_of() %>%
-                        filter(parameter_desc == p) %>%
-                        select(dmr_unit_desc) %>% 
-                        unique()
-
+                        punits <- dmr_of() %>%
+                            filter(parameter_desc == p) %>%
+                            select(dmr_unit_desc) %>%
+                            unique()
+                    
+                        
+                    # punits <- dmr_of() %>%
+                    #     filter(parameter_desc == p) %>%
+                    #     select(dmr_unit_desc) %>%
+                    #     unique()
+                    
+                    
                     # WQS SB
                     
                     if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
@@ -327,6 +336,12 @@ shinyServer(function(input, output) {
                                        alpha = ifelse(is.na(wqsd) == TRUE, 0, 1),
                                        color = '#8c510a', linetype = 'dotdash')
                             })
+                    
+                    rdmr <- reactive({
+                        rdmr.r <- dmr_of() %>% 
+                                    filter(parameter_desc == p) %>% 
+                                    as_tibble()
+                    })
                 
                     tabPanel(title = h3(p), # tab panel for each parameter
 
