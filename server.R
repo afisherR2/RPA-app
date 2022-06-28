@@ -306,7 +306,7 @@ shinyServer(function(input, output) {
                         filter(parameter_desc == p) %>%
                         ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr)) +
                         geom_line(color = '#01665e') +
-                        geom_area(position = position_dodge(NULL), fill = '#c7eae5', alpha = .5) +
+                        geom_area(position = position_dodge(width = 1), fill = '#c7eae5', alpha = .5) +
                         xlab('Date') +
                         ylab(paste(p, '(', punits, ')')) +
                         theme_light(base_size = 15) +
