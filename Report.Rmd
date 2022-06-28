@@ -42,8 +42,6 @@ knitr::opts_chunk$set(echo = FALSE)
 
 `r params$dat`
 
-***
-
 # **`r params$NPDES` - `r params$outfall` : `r params$param`**
 
 #### Evaluated from `r params$sdat` to `r params$edat`
@@ -68,8 +66,6 @@ knitr::opts_chunk$set(echo = FALSE)
 #### \textcolor{rwccolor}{RWC: `r params$RWC` `r params$unts`}
 
 
-
-***
 ### **TIME SERIES**
 ```{r}
 params$pplot
@@ -77,7 +73,6 @@ params$pplot
 
 \newpage
 
-***
 ### **RECEIVING WATER CONCENTRATION CALCULATIONS**
 #### *assuming a 95% confidence level and a 95% probability basis*\
 *calculations from 1991 Technical Support Document pgs 51-55*
@@ -105,9 +100,10 @@ RWC & = `r params$pmx` * `r params$RPM` * `r params$DR`\\
  & = `r params$RWC`
 \end{align*}
 
+***
+
 \newpage
 
-***
 ### **DATA TABLE**
 ```{r}
 knitr::kable(params$dmrr)
