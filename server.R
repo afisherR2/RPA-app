@@ -22,7 +22,7 @@ RWC <- function(value, p, dr){
     
     db <- value %>% 
         filter(parameter_desc == p &
-               nodi_code != 'B') %>% 
+                   nodi_code != 'B') %>% 
         select(dmr_value_nmbr)
     
     df <- db$dmr_value_nmbr %>%  # sort
@@ -54,33 +54,32 @@ RWC <- function(value, p, dr){
     
     cv2 <- cv^2 # cv squared
     
-    # for n > 20 use 0.95, else (1 - 0.95)^(1/n)
+    # Percentile Pn
+    # for n > 20, n = 20, else (1 - 0.95)^(1/n)
     if (n > 20) {
         x <- (1 - 0.95)^(1/20)
     } else {
         x <- (1 - 0.95)^(1/n)}
     
-    # NEED a log transformed m, sd, and df for z95 and zx???
+    # log transform for percentile and z score
+    df_ln <- df %>% 
+        log()
     
-    df_ln <- db$dmr_value_nmbr %>%  # sort
-        log()  %>%
-        sort()
+    m_ln <- mean(df_ln)
+    sd_ln <- sd(df_ln)
     
-    m_ln <- mean(df_ln) # mean
-    sd_ln <- sd(df_ln) # standard deviation
-    
-    z95 <- ((quantile(df_ln, .95) - m_ln)/sd_ln) %>%  # 95th percentile
-        round(2)
+    # z score
+    z95 <- 1.645
     zx <- ((quantile(df_ln, x) - m_ln)/sd_ln) %>% 
-        round(2)
+        unname() %>% 
+        round(3)
     
     RWCval$z95 <- z95
     RWCval$zx <- zx
     
     # FROM "notes on PR DMR and RPA Tools" page 5 - on PR Qlick ShapePoint
     RPM <- (exp(z95*log(1+cv2)^0.5 - (0.5*log(1+cv2)))) / (exp(zx*log(1+cv2)^0.5 - (0.5*log(1+cv2))))
-    # Max Receiving Water Concentration (RWC) = EEQ or max value * n/cv ratio from table * dilution factor
-    
+
     RWCval$RPM <- RPM %>% 
         round(2)
     
