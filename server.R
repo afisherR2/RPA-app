@@ -124,13 +124,13 @@ shinyServer(function(input, output) {
                        'please double check the NPDES ID and WQS file',
                        icon = NA, color = '#b30000')
         
-        feedbackDanger('WQSinput', file_ext(input$WQSinput$datapath) != 'xlsx', # BREAK if NPDES ID isnt valid
-                       'please upload a properly formatted WQS file',
-                       icon = NA, color = '#b30000')
+#        feedbackDanger('WQSinput', file_ext(input$WQSinput$datapath) != 'xlsx', # BREAK if NPDES ID isnt valid
+#        'please upload a properly formatted WQS file',
+#        icon = NA, color = '#b30000')
 
         req(nchar(input$NPDESID) == 9) # BREAK if NPDES ID isnt 9 char
-        req(substr(input$WQSinput$name, 1, 2) == substr(input$NPDESID, 1, 2)) # break if NPDES ID doesn't match WQS file
-        req(file_ext(input$WQSinput$datapath) == 'xlsx') # BREAK check for WQS file upload
+#        req(substr(input$WQSinput$name, 1, 2) == substr(input$NPDESID, 1, 2)) # break if NPDES ID doesn't match WQS file
+#        req(file_ext(input$WQSinput$datapath) == 'xlsx') # BREAK check for WQS file upload
         
         # showNotification('Let me just pull some files from ICIS-NPDES', type = 'message')
         
@@ -144,7 +144,7 @@ shinyServer(function(input, output) {
 # NPDES ID validity check ---------------------------------------------------
     dfinfo2 <- reactive({
         req(dfinfo1()) # BREAK dfinfo1
-        req(input$WQSinput) # BREAK for WQS upload
+#        req(input$WQSinput) # BREAK for WQS upload
         
         feedbackDanger('NPDESID', nrow(dfinfo1()) != 1, # BREAK if NPDES ID isnt valid
                        'please enter a valid NPDES ID',
@@ -164,22 +164,24 @@ shinyServer(function(input, output) {
         
 ### Pull DMR with echor after first next button --------------------------------
     dmr <- eventReactive(input$nextBtn, {
-        req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
+#        req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
         echoGetEffluent(p_id = input$NPDESID, # pull DMR
                         start_date = format(today() %m-% years(5), '%m/%d/%Y'), # 5 years ago
-                        end_date = format(today(), '%m/%d/%Y')) # todays date
+                        end_date = format(today(), '%m/%d/%Y')) %>% # todays date
+            suppressWarnings() # suppress parsing warning
+        
     }, ignoreNULL = FALSE)
     
 # read WQS file ----------------------------------------------------------------
-    WQSdf <- eventReactive(input$nextBtn, {
-        req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
-        WQSdf <- read_xlsx(input$WQSinput$datapath)
-        return(WQSdf)
-    })
+    # WQSdf <- eventReactive(input$nextBtn, {
+    #     req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
+    #     WQSdf <- read_xlsx(input$WQSinput$datapath)
+    #     return(WQSdf)
+    # })
     
 # Select outfall to use --------------------------------------------------------
     observeEvent(input$nextBtn,{
-        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+#        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
         
         otfl <- dmr() %>%  # filter for only internal outfalls
             filter(perm_feature_type_code == 'EXO') %>% 
@@ -201,7 +203,7 @@ shinyServer(function(input, output) {
     
 # Second next button 
     observeEvent(input$nextBtn, {
-        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+#        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
         output$nextBtn2 <- renderUI(actionButton('nextBtn2', label = strong('Next'))) 
     })
 
