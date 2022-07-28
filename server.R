@@ -238,6 +238,10 @@ shinyServer(function(input, output) {
     observeEvent(input$nextBtn2, {
         
         
+        # paste0('<div style="display:flex"><i class="fa fa-square"
+        #                                  style="color:',col,';margin-top:3px;"></i><div style="color:black;padding-left:5px;">',content,'</div></div>')
+        
+        
         output$pdr <- renderUI(
             numericInput('DR', 
                          label = h3('Dilution Ratio:'), width = '50%',
@@ -245,22 +249,32 @@ shinyServer(function(input, output) {
             
         output$pMaxbox <- renderUI(
             checkboxInput('Maxbox', 
-                          label = HTML(x_format('#dfc27d', h3('Max Value'))),
+                          label = HTML('<div style="display:flex"><i class="fas fa-minus"
+                          style="color:#dfc27d;"></i><div style="color:black;padding-left:5px;\"><h3>Max Value</h3></div></div>'),
+                          # label = HTML(x_format('#dfc27d', h3('Max Value'))),
                           value = FALSE))
         
         output$pSBxbox <- renderUI(
             checkboxInput('SBxbox', 
-                          label = HTML(x_format('#bf812d', h3('WQS - SB'))),
+                          label = HTML('<div style="display:flex"><i class="fas fa-ellipsis"
+                          style="color:#bf812d;"></i><div style="color:black;padding-left:5px;\"><h3>WQS - SB</h3></div></div>'),
+                          # label = HTML(x_format('#bf812d', h3('WQS - SB'))),
                           value = FALSE))
         
         output$pSDxbox <- renderUI(
-            checkboxInput('SDxbox', 
-                          label = HTML(x_format('#8c510a',h3('WQS - SD'))),
+            checkboxInput('SDxbox',
+                          label = HTML('<div style="display:flex"><i class="fas fa-circle"
+                          style="color:#8c510a;"></i><i class="fas fa-minus"
+                          style="color:#8c510a;"></i><div style="color:black;padding-left:5px;\"><h3>WQS - SD</h3></div></div>'),
+                          # label = HTML(x_format('#8c510a',h3('WQS - SD'))),
                           value = FALSE))
         
         output$pRWCxbox <- renderUI(
-            checkboxInput('RWCxbox', 
-                          label = HTML(x_format('#543005',h3('RWC'))),
+            checkboxInput('RWCxbox',
+                          label = HTML('<div style="display:flex"><i class="fas fa-minus"
+                          style="color:#543005;"></i><i class="fas fa-minus"
+                          style="color:#543005;"></i><div style="color:black;padding-left:5px;\"><h3>RWC</h3></div></div>'),
+                          # label = HTML(x_format('#543005',h3('RWC'))),
                           value = FALSE))
             
         
