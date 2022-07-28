@@ -1,19 +1,19 @@
 # Require packages
-require(shiny)
-require(shinyBS)
-require(shinythemes)
-require(shinyvalidate)
-require(shinyFeedback)
-require(shinybusy)
-require(echor)
-require(dplyr)
-require(plotly)
-require(lubridate)
-require(purrr)
-require(readxl)
-require(tools)
-require(tinytex)
-
+library(shiny)
+library(shinyBS)
+library(shinythemes)
+library(shinyvalidate)
+library(shinyFeedback)
+library(shinybusy)
+library(echor)
+library(dplyr)
+library(plotly)
+library(lubridate)
+library(purrr)
+library(readxl)
+library(tools)
+library(tinytex)
+library(xml2)
 
 
 # runApp(display.mode = "showcase")
@@ -159,8 +159,7 @@ shinyUI(
 	  br(),
 
 	    column(4, offset = 1,
-	           textInput('NPDESID', label = h3('NPDES ID Input'),
-	                     value = 'PR0020486')),
+	           textInput('NPDESID', label = h3('NPDES ID Input'))),
 	    
 	  
 	    column(4, offest = 1,
