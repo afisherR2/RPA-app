@@ -14,6 +14,7 @@ library(readxl)
 library(tools)
 library(tinytex)
 library(xml2)
+library(shinyjs)
 
 
 # receiving water concentration function ---------------------------------------
@@ -199,12 +200,19 @@ shinyServer(function(input, output) {
 # First next button
 
     output$nextBtn <- renderUI({
-        actionButton('nextBtn', label = strong('Next'))})
+        actionButton('nextBtn', 
+                     label = '',
+                     icon = icon('angle-down'))})
 
     
 # Second next button 
     observeEvent(input$nextBtn, {
-        output$nextBtn2 <- renderUI(actionButton('nextBtn2', label = strong('Next'))) 
+        
+        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+        
+        output$nextBtn2 <- renderUI(actionButton('nextBtn2', 
+                                                 label = '',
+                                                 icon = icon('angle-down'))) 
     })
 
 
@@ -249,9 +257,9 @@ shinyServer(function(input, output) {
             
         output$pMaxbox <- renderUI(
             checkboxInput('Maxbox', 
-                          label = HTML('<div style="display:flex"><i class="fas fa-minus"
+                          label = HTML('<div style="display:flex"><i class="fa-solid fa-dash"
                           style="color:#dfc27d;"></i><div style="color:black;padding-left:5px;\"><h3>Max Value</h3></div></div>'),
-                          # label = HTML(x_format('#dfc27d', h3('Max Value'))),
+                          # label = HTML(x_format('#dfc27d', h3('Max Value'))), fas fa-minus
                           value = FALSE))
         
         output$pSBxbox <- renderUI(
@@ -441,11 +449,11 @@ shinyServer(function(input, output) {
                                          ),
                                          
 # Rmd Report download ----------------------------------------------------------
-                                         column(2, offset = 10, # download button placement
+                                         column(2, offset = 12, # download button placement
 
                                                 output$parport <- downloadHandler(
                                                     filename = paste0(input$NPDESID, 
-                                                                      '_', input$radiob, '_',p,' RP Report.pdf'),
+                                                                      '_', input$radiob, '_', p,' RP Report.pdf'),
                                                     content = function(file){ # copy report to temp directory
                                                         tempReport <- file.path(tempdir(), 'Report.Rmd')
                                                         file.copy('Report.Rmd', tempReport, overwrite = TRUE)
@@ -481,13 +489,13 @@ shinyServer(function(input, output) {
                                                         rmarkdown::render(tempReport, output_file = file,
                                                                           params = params,
                                                                           envir = new.env(parent = globalenv()))
-                                                    })
+                                                    }),
 
                                                 ) # end column
 # ------------------------------------------------------------------------------
-                                     ) # fluidRow
+                                     ) # fluid  Row
 
-                                  )# end map
+                                  ) # end map
                     
                 }) -> gap
             do.call(what = tabsetPanel,
@@ -496,13 +504,19 @@ shinyServer(function(input, output) {
                                     id   = 'param_tabs')))
         })
         
-        # outputOptions(output, 'tabs', suspendWhenHidden = FALSE)
-        
+
     }) # end of tabset
     
     
+    # Download button 
+    observeEvent(input$nextBtn2, {
+        
+        req(input$radiob)  # BREAK check if outfall is selected
+        
+        output$downloadBtn <- renderUI(
+            downloadButton('parport', label = '',
+                           icon = icon('angle-double-down', lib = 'font-awesome'))
+            ) 
+    })
 
-    # observeEvent(input$DR, {
-    #     updateNumericInput(inputId = 'DR')
-    # })
 })
