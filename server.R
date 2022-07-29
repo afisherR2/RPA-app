@@ -239,12 +239,7 @@ shinyServer(function(input, output) {
 # Insert tabset for parameters -------------------------------------------------
 # code structure from: https://thatdatatho.com/how-to-create-dynamic-tabs-with-plotly-plots-in-r-shiny/
     observeEvent(input$nextBtn2, {
-        
-        
-        # paste0('<div style="display:flex"><i class="fa fa-square"
-        #                                  style="color:',col,';margin-top:3px;"></i><div style="color:black;padding-left:5px;">',content,'</div></div>')
-        
-        
+
         output$pdr <- renderUI(
             numericInput('DR', 
                          label = h3('Dilution Ratio:'), width = '50%',
@@ -354,7 +349,8 @@ shinyServer(function(input, output) {
                             
                             geom_hline(yintercept = ifelse(is.na(wqsd) == TRUE, 0, wqsd),
                                        alpha = ifelse(is.na(wqsd) == TRUE, 0, 1),
-                                       color = '#8c510a', linetype = 'longdash')
+                                       color = '#8c510a', linetype = 'longdash') +
+                            theme(legend.position = 'bottom')
                             })
                     
                     # data table for report with select columns and modified names
@@ -443,7 +439,7 @@ shinyServer(function(input, output) {
                                                  
                                              if (input$RWCxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = pstats$RWC,
-                                                                       color = '#543005', linetype = 'dashed')
+                                                                       color = '#543005', linetype = 'dashed') 
 
                                              } else { pl }
                                                  
@@ -454,8 +450,7 @@ shinyServer(function(input, output) {
                                          ),
                                          
 # Rmd Report download ----------------------------------------------------------
-                                         # column(2, offset = 13, # download button placement
-                                        # eventReactive(input$radiob, {
+                                         column(2, offset = 10, # download button placement
 
                                                 output$parport <- downloadHandler(
                                                     filename = paste0(input$NPDESID, 
@@ -496,10 +491,8 @@ shinyServer(function(input, output) {
                                                                           params = params,
                                                                           envir = new.env(parent = globalenv()))
                                                     })
-                                        
-                                        # }) # end observe event
-
-                                                # ) # end column
+                        
+                                                ) # end column
 
                                                 
 # ------------------------------------------------------------------------------
@@ -516,18 +509,5 @@ shinyServer(function(input, output) {
         
 
     }) # end of tabset
-    
-    # shinyjs::hide('parport')
-    
-    # Download button 
-    observeEvent(input$nextBtn2, {
-        
-        req(input$radiob)  # BREAK check if outfall is selected
-        
-        output$downloadBtn <- renderUI(
-            downloadButton('parport', label = '',
-                           icon = icon('angle-double-down', lib = 'font-awesome'))
-            ) 
-    })
 
 })

@@ -57,19 +57,23 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ***
 ### **SUMMARY STATISTICS:**
-#### Number of Samples: `r params$nsam`
-#### Min: `r params$pmn` `r params$unts`
+#### Number of Samples: `r params$nsam` 
+#### Min: `r params$pmn` `r params$unts` 
 #### Mean: `r params$pmean` `r params$unts`
-#### \textcolor{maxcolor}{Max: `r params$pmx` `r params$unts`}
-#### \textcolor{sbcolor}{WQS - SB: `r params$WQSB` `r params$unts`}
-#### \textcolor{sdcolor}{WQS - SD: `r params$WQSD` `r params$unts`}
-#### \textcolor{rwccolor}{RWC: `r params$RWC` `r params$unts`}
+#### WQS - SB: `r params$WQSB` `r params$unts`
+#### Max: `r params$pmx` `r params$unts` 
+#### WQS - SD: `r params$WQSD` `r params$unts`
+#### RWC: `r params$RWC` `r params$unts`
 
 
 ### **TIME SERIES**
 ```{r}
 params$pplot
 ```
+
+#### \textcolor{maxcolor}{---Max: `r params$pmx` `r params$unts`} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\textcolor{sbcolor}{...WQS - SB: `r params$WQSB` `r params$unts`}
+
+#### \textcolor{sdcolor}{- - WQS - SD: `r params$WQSD` `r params$unts`} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\textcolor{rwccolor}{--RWC: `r params$RWC` `r params$unts`}
 
 \newpage
 
