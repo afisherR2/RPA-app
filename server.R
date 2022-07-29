@@ -14,7 +14,6 @@ library(readxl)
 library(tools)
 library(tinytex)
 library(xml2)
-library(shinyjs)
 
 
 # receiving water concentration function ---------------------------------------
