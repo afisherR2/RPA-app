@@ -97,15 +97,10 @@ RWC <- function(value, p, dr){
 # checkbox color formatting code -----------------------------------------------
 # altered from: https://community.rstudio.com/t/colors-next-to-checkboxes-in-shiny/74908/7
 
-# dashed # fa-solid fa-hyphen
-# dotted # fas fa-ellipsis-h
-# dashdot # fa-solid fa-period   combine with hyphen?
-# solid # fa-solid fa-horizontal-rule
-
-x_format<- function(col,content){
-    paste0('<div style="display:flex"><i class="fa fa-square"
-                                         style="color:',col,';margin-top:3px;"></i><div style="color:black;padding-left:5px;">',content,'</div></div>')
-}
+# x_format<- function(col,content){
+#     paste0('<div style="display:flex"><i class="fa fa-square"
+#                                          style="color:',col,';margin-top:3px;"></i><div style="color:black;padding-left:5px;">',content,'</div></div>')
+# }
 
 #-------------------------------------------------------------------------------
 # Define server logic 
@@ -257,31 +252,38 @@ shinyServer(function(input, output) {
             
         output$pMaxbox <- renderUI(
             checkboxInput('Maxbox', 
-                          label = HTML('<div style="display:flex"><i class="fa-solid fa-dash"
-                          style="color:#dfc27d;"></i><div style="color:black;padding-left:5px;\"><h3>Max Value</h3></div></div>'),
+                          label = HTML('<div style="display:flex">
+                          <i class="fas fa-minus fa-2x"style="color:#dfc27d;margin-top:-4px;"></i>
+                          <i class="fas fa-minus fa-2x"style="color:#dfc27d;margin-top:-4px;margin-left:-3px;"></i>
+                          <div style="color:black;padding-left:5px;\"><h3>Max Value</h3></div></div>'),
                           # label = HTML(x_format('#dfc27d', h3('Max Value'))), fas fa-minus
                           value = FALSE))
         
         output$pSBxbox <- renderUI(
             checkboxInput('SBxbox', 
-                          label = HTML('<div style="display:flex"><i class="fas fa-ellipsis"
-                          style="color:#bf812d;"></i><div style="color:black;padding-left:5px;\"><h3>WQS - SB</h3></div></div>'),
+                          label = HTML('<div style="display:flex">
+                          <i class="fas fa-ellipsis fa-2x"style="color:#bf812d;margin-top:-4px;">
+                          </i><div style="color:black;padding-left:5px;\"><h3>WQS-SB</h3></div></div>'),
                           # label = HTML(x_format('#bf812d', h3('WQS - SB'))),
                           value = FALSE))
         
         output$pSDxbox <- renderUI(
             checkboxInput('SDxbox',
-                          label = HTML('<div style="display:flex"><i class="fas fa-circle"
-                          style="color:#8c510a;"></i><i class="fas fa-minus"
-                          style="color:#8c510a;"></i><div style="color:black;padding-left:5px;\"><h3>WQS - SD</h3></div></div>'),
+                          label = HTML('<div style="display:flex">
+                          <i class="fas fa-minus fa-2x"style="color:#8c510a;margin-top:-4px;"></i>
+                          <i class="fas fa-minus fa-2x"style="color:#8c510a;margin-top:-4px;margin-left:7px;"></i>
+                          <div style="color:black;padding-left:5px;\"><h3>WQS-SD</h3></div></div>'),
                           # label = HTML(x_format('#8c510a',h3('WQS - SD'))),
                           value = FALSE))
         
         output$pRWCxbox <- renderUI(
             checkboxInput('RWCxbox',
-                          label = HTML('<div style="display:flex"><i class="fas fa-minus"
-                          style="color:#543005;"></i><i class="fas fa-minus"
-                          style="color:#543005;"></i><div style="color:black;padding-left:5px;\"><h3>RWC</h3></div></div>'),
+                          label = HTML('<div style="display:flex">
+                          <i class="fas fa-minus fa-2x"style="color:#543005;margin-top:-4px;"></i>
+                          <i class="fas fa-square fa-2x"style="color:white;margin-top:-4px;margin-left:-6px;"></i>
+                          <i class="fas fa-minus fa-2x"style="color:#543005;margin-top:-4px;margin-left:-7px;"></i>
+                          <i class="fas fa-square fa-2x"style="color:white;margin-top:-4px;margin-left:-6px;"></i>
+                          <div style="color:black;padding-left:5px;margin-left:-20px;\"><h3>RWC</h3></div></div>'),
                           # label = HTML(x_format('#543005',h3('RWC'))),
                           value = FALSE))
             
@@ -289,6 +291,8 @@ shinyServer(function(input, output) {
         paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
         
         output$tabs <- renderUI({ # render UI
+            
+            # useShinyjs()
             
             map(paramtab$nparam, # map over the list of parameters
                 function(p){
@@ -340,8 +344,9 @@ shinyServer(function(input, output) {
                     ppl <- reactive({
                         pl + geom_hline(yintercept = pstats$max,
                                               color = '#dfc27d', linetype = 'solid') +
+                            
                             geom_hline(yintercept = pstats$RWC,
-                                          color = '#543005', linetype = 'longdash') +
+                                          color = '#543005', linetype = 'dashed') +
                             
                             geom_hline(yintercept = ifelse(is.na(wqsb) == TRUE, 0, wqsb),
                                        alpha = ifelse(is.na(wqsb) == TRUE, 0, 1),
@@ -349,7 +354,7 @@ shinyServer(function(input, output) {
                             
                             geom_hline(yintercept = ifelse(is.na(wqsd) == TRUE, 0, wqsd),
                                        alpha = ifelse(is.na(wqsd) == TRUE, 0, 1),
-                                       color = '#8c510a', linetype = 'dotdash')
+                                       color = '#8c510a', linetype = 'longdash')
                             })
                     
                     # data table for report with select columns and modified names
@@ -434,11 +439,11 @@ shinyServer(function(input, output) {
                                                  
                                              if (input$SDxbox == TRUE && is.na(wqsd) == FALSE) {
                                                  pl <- pl + geom_hline(yintercept = wqsd,
-                                                                       color = '#8c510a', linetype = 'dotdash')}
+                                                                       color = '#8c510a', linetype = 'longdash')}
                                                  
                                              if (input$RWCxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = pstats$RWC,
-                                                                       color = '#543005', linetype = 'longdash')
+                                                                       color = '#543005', linetype = 'dashed')
 
                                              } else { pl }
                                                  
@@ -449,7 +454,8 @@ shinyServer(function(input, output) {
                                          ),
                                          
 # Rmd Report download ----------------------------------------------------------
-                                         column(2, offset = 12, # download button placement
+                                         # column(2, offset = 13, # download button placement
+                                        # eventReactive(input$radiob, {
 
                                                 output$parport <- downloadHandler(
                                                     filename = paste0(input$NPDESID, 
@@ -489,9 +495,13 @@ shinyServer(function(input, output) {
                                                         rmarkdown::render(tempReport, output_file = file,
                                                                           params = params,
                                                                           envir = new.env(parent = globalenv()))
-                                                    }),
+                                                    })
+                                        
+                                        # }) # end observe event
 
-                                                ) # end column
+                                                # ) # end column
+
+                                                
 # ------------------------------------------------------------------------------
                                      ) # fluid  Row
 
@@ -507,6 +517,7 @@ shinyServer(function(input, output) {
 
     }) # end of tabset
     
+    # shinyjs::hide('parport')
     
     # Download button 
     observeEvent(input$nextBtn2, {

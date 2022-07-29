@@ -14,6 +14,7 @@ library(readxl)
 library(tools)
 library(tinytex)
 library(xml2)
+library(shinyjs)
 
 
 # runApp(display.mode = "showcase")
@@ -170,7 +171,7 @@ shinyUI(
 	
 # First NEXT button
   fluidRow(
-    column(2, offset = 10,
+    column(2, offset = 11,
            uiOutput('nextBtn'))),
   
   	br(),
@@ -178,7 +179,6 @@ shinyUI(
   	hr(),
 	
 # LARGE NPDES ID and Address
-# other information to add???
 	fluidRow(
 	    column(6, offset = 1,
 	           h1(textOutput('facility'))),
@@ -200,7 +200,7 @@ shinyUI(
 	
 # second NEXT button
 	fluidRow(
-	    column(2, offset = 10,
+	    column(2, offset = 11,
 	           uiOutput('nextBtn2'))),
   
   br(),
@@ -234,6 +234,13 @@ shinyUI(
       column(2,
              uiOutput('pRWCxbox'))
   ),
+
+# second NEXT button
+  fluidRow(
+    column(2, offset = 11,
+           uiOutput('downloadBtn'))),
+
+
 
   br(),
   br(),
