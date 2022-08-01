@@ -89,7 +89,7 @@ shinyUI(
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
 	     <p> <b>Created by Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Data Management Coordinator</b></p>
-       <p> <b>Version ALPHA, Last Updated June 13, 2022</b></p>
+       <p> <b>Version BETA, Last Updated August 1, 2022</b></p>
 
 	   </div>
 	   </div>
@@ -99,8 +99,6 @@ shinyUI(
 #####
 # 	   
 	
-	
-	# what about an intro popup window when the app first launches?
 # what about adding a map of the facility?
 
 # Insert RShiny App here
@@ -122,34 +120,53 @@ shinyUI(
   bsCollapse(id = 'Overview',
              bsCollapsePanel(title = h3(strong('Overview')), value = 'Overview',
                              p('The R2 Reasonable Potential Analysis Tool is an R Shiny app developed 
-          to support permit writers’ evaluation of concentration based effluent discharge from NPDES 
-          permitted facilities. The app assists permit writers’ determination of 
-          reasonable potential by comparing discharge history with current water 
+          to support NPDES permit writers’ evaluation of concentration based effluent discharged from 
+          permitted facilities. The Tool assists in determination of 
+          reasonable potential by comparing effluent discharge history with current water 
           quality standards and calculating the Receiving Water Concentration
-          as defined in EPA’s 1991 Technical Support Document. The Receiving Water Concentration
-          calculations assume a 95% confidence level and a 95% probability basis.
+          (as defined in the EPA', tags$a(href = 'https://www3.epa.gov/npdes/pubs/owm0264.pdf', '1991 Technical Support Document for Water Quality-Based
+          Toxics Control', target = 'blank'), ', pages 51-55). The Receiving Water Concentration
+          calculations assume a 95% confidence level and a 95% probability basis. Please review the
+          Technical Support Document for information on the Receiving Water Concentration.'),
+      
           
-          The app specifically focuses on reported daily maximum effluent (statistical base type code = MAX),
-          discharge from monitoring location code 1, discharge from external outfalls,
-          and only concentration based discharge. 
+          p('The tool specifically analyzes effluent meeting the following criteria: 
+          concentration based effluent,
+          reported daily maximum concentration,
+          discharged from monitoring location code 1, 
+          and discharged from external outfalls. 
           Non-detect values are NOT represented in this analysis. Discharge data for
-          the previous 5 years is extracted from ECHO, and is taken AS IS - no data cleaning
-          or scrubbing has been performed.
+          the previous 5 years is extracted from the Enforcement and Compliance History Online
+          database (ECHO), and is taken "as is" - no data cleaning
+          or scrubbing has been performed.'),
+        
           
-          Disclaimer: No warranty, express or implied, is 
-          made by EPA or any other agency of the U.S. Government regarding the 
-          accuracy, completeness, or currency of this information.')),
+          p('No warranty, express or implied, is made by EPA or any other agency of 
+          the U.S. Government regarding the accuracy, completeness, or currency 
+          of this information.'),
+          
+          p('For R2 Reasonable Potential Tool questions, bugs, feedback, or modification 
+          suggestions, or for a water quality standards excel formatted template, 
+          please contact Adam Fisher at', tags$a(href="mailto:fisher.adam@epa.gov", 
+                                                 "fisher.adam@epa.gov", target="blank"),
+          '.')),
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
-                          p('To start, enter a valid NPDES ID in the NPDES ID Input field
-          and select a formatted water quality standard excel file to upload in the
-          WQS File Upload field. Select the NEXT button. Select an outfall to evaluate. 
-          Choose between various discharge parameters, change the Dilution Ratio, 
-          or select various limits/water quality standards/or Receiving Water Quality 
-          standards ot view on the time series plot. The DOWNLOAD button will download 
-          a formatted PDF containing summary statistics, Receiving Water Concentration
-          calculations, a time series plot, and a natural log transformed distribution 
-          of the effluent discharge.'))),
+                          p('To start, enter a NPDES ID in the ', strong('NPDES ID Input'), ' field
+          and upload a formatted water quality standard excel file in the ', strong('WQS File Upload'), '
+          field. Select the down arrow button to proceed to the next 
+          section. Facility information for the NPDES ID will display with the
+          external outfalls discharging from the facility. Select an outfall to evaluate and 
+          select the down arrow button. Concentration based effluents discharged from the 
+          selected outfall will apear below. 
+          Choose between various discharge effluents to view summary statistics, water quality 
+          standards, the Receiving Water Concentration (RWC) and 
+          a discharge history plot. Change the Dilution Ratio 
+          or select various limits to view on the time series plot.
+          The ', strong('Download'),' button will download a formatted PDF containing 
+          facility information, summary statistics, the discharge history plot, 
+          detailed Receiving Water Concentration calculations,
+          and the raw data used in the calculations.'))),
 	
 # NPDES ID input and WQS csv
 	fluidRow(
