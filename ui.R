@@ -84,12 +84,11 @@ shinyUI(
        </div>
        </div>
        <div class='main-column clearfix'><!--googleon:all-->
-	   <h1  class='page-title'>R2 Reasonable Potential Tool</h1>
+	   <h1  class='page-title'>R2 Reasonable Potential Tool BETA</h1>
        <div class='panel-pane pane-node-content'>
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
 	     <p> <b>Created by Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Data Management Coordinator</b></p>
-       <p> <b>Version BETA, Last Updated August 1, 2022</b></p>
 
 	   </div>
 	   </div>
@@ -160,9 +159,9 @@ shinyUI(
           select the down arrow button. Concentration based effluents discharged from the 
           selected outfall will apear below. 
           Choose between various discharge effluents to view summary statistics, water quality 
-          standards, the Receiving Water Concentration (RWC) and 
+          standards, the Receiving Water Concentration (RWC), and 
           a discharge history plot. Change the Dilution Ratio 
-          or select various limits to view on the time series plot.
+          or select various limits to view on the plot.
           The ', strong('Download'),' button will download a formatted PDF containing 
           facility information, summary statistics, the discharge history plot, 
           detailed Receiving Water Concentration calculations,
