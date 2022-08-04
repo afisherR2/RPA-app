@@ -132,7 +132,7 @@ shinyServer(function(input, output) {
         
         echoWaterGetFacilityInfo(p_pid = input$NPDESID,
                                  output = 'df',
-                                 qcolumns = '1,3,4,5,6,7')
+                                 qcolumns = '1,3,4,5,7')
 
     }, ignoreNULL = FALSE)
     
