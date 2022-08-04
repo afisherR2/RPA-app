@@ -19,8 +19,10 @@ library(xml2)
 # receiving water concentration function ---------------------------------------
 RWC <- function(value, p, dr){
     
+    # create empty list
     RWCval <- list()
     
+    # filter dmr by parameter and nodi code, select value number
     db <- value %>% 
         filter(parameter_desc == p &
                    nodi_code != 'B') %>% 
@@ -33,13 +35,14 @@ RWC <- function(value, p, dr){
     max <- max(df) # max of samples
     
     RWCval$min <- min(df) # min of samples
-    RWCval$n <- n
-    RWCval$max <- max
+    RWCval$n <- n # number of samples
+    RWCval$max <- max # max of samples
     
-    m <- mean(df) 
+    m <- mean(df)  # mean of samples
     
     sd <- sd(df) # standard deviation
     
+    # assing values to list
     RWCval$m <- m %>% 
         round(2)
     RWCval$sd <- sd %>% 
@@ -78,6 +81,7 @@ RWC <- function(value, p, dr){
     RWCval$RPM <- RPM %>%
         round(2)
     
+    # RWC equation
     RWC <- round(max * RPM / as.numeric(dr), 2)
     
     RWCval$RWC <- RWC
@@ -86,13 +90,6 @@ RWC <- function(value, p, dr){
 }
 
 
-# checkbox color formatting code -----------------------------------------------
-# altered from: https://community.rstudio.com/t/colors-next-to-checkboxes-in-shiny/74908/7
-
-# x_format<- function(col,content){
-#     paste0('<div style="display:flex"><i class="fa fa-square"
-#                                          style="color:',col,';margin-top:3px;"></i><div style="color:black;padding-left:5px;">',content,'</div></div>')
-# }
 
 #-------------------------------------------------------------------------------
 # Define server logic 
@@ -185,7 +182,6 @@ shinyServer(function(input, output) {
     
 # BUTTONS ----------------------------------------------------------------------
 # First next button
-
     output$nextBtn <- renderUI({
         actionButton('nextBtn', 
                      label = '',
@@ -237,6 +233,7 @@ shinyServer(function(input, output) {
                          label = h3('Dilution Ratio:'), width = '50%',
                          value = 1))
             
+        # icon color code, altered from: https://community.rstudio.com/t/colors-next-to-checkboxes-in-shiny/74908/7
         output$pMaxbox <- renderUI(
             checkboxInput('Maxbox', 
                           label = HTML('<div style="display:flex">
