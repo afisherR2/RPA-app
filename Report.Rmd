@@ -100,7 +100,7 @@ Z_{x} & = `r params$pzx`\\
 RPM & = \displaystyle \frac{exp(`r params$pz95`\ln(1 + `r params$pcv`^{2})^{0.5} - 0.5\ln(1 + `r params$pcv`^{2}))}{exp(`r params$pzx`\ln(1 + `r params$pcv`^{2})^{0.5} - 0.5\ln(1 + `r params$pcv`^{2}))}\\
  & = `r params$RPM`\\
  \\
-RWC & = `r params$pmx` * `r params$RPM` * `r params$DR`\\
+RWC & = `r params$pmx` * `r params$RPM` / `r params$DR`\\
  & = `r params$RWC`
 \end{align*}
 
