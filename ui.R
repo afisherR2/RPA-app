@@ -88,7 +88,7 @@ shinyUI(
        <div class='panel-pane pane-node-content'>
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
-	     <p> <b>Created by Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Data Management Coordinator</b></p>
+	     <p> <b>Created by Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Water Division Data Management Coordinator</b></p>
 
 	   </div>
 	   </div>
@@ -145,10 +145,12 @@ shinyUI(
           of this information.'),
           
           p('For R2 Reasonable Potential Tool questions, bugs, feedback, or modification 
-          suggestions, or for a water quality standards excel formatted template, 
-          please contact Adam Fisher at', tags$a(href="mailto:fisher.adam@epa.gov", 
-                                                 "fisher.adam@epa.gov", target="blank"),
-          '.')),
+          suggestions, contact Adam Fisher at', tags$a(href = 'mailto:fisher.adam@epa.gov', 
+                                                       'fisher.adam@epa.gov', target = 'blank', '.')),
+          
+          p('A water quality standards excel formatted template can be found',
+          tags$a(href = 'https://usepa-my.sharepoint.com/:x:/r/personal/fisher_adam_epa_gov/_layouts/15/Doc.aspx?sourcedoc=%7BA0FB161C-4D7E-4E21-9D4E-A6F8021CC9AC%7D&file=RPTOOL_WQS_Template.xlsx&action=default&mobileredirect=true',
+                 'here.', target = 'blank'))),
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
                           p('To start, enter a NPDES ID in the ', strong('NPDES ID Input'), ' field
