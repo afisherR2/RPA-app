@@ -171,7 +171,7 @@ shinyServer(function(input, output) {
 # read WQS file ----------------------------------------------------------------
     WQSdf <- eventReactive(input$nextBtn, {
         req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
-        WQSdf <- read_xlsx(input$WQSinput$datapath)
+        WQSdf <- read_xlsx(input$WQSinput$datapath, sheet = 'WQS')
         return(WQSdf)
     })
     
