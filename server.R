@@ -325,7 +325,10 @@ shinyServer(function(input, output) {
                     # time series plot ui display
                     pl <- dmr_of() %>%
                         filter(parameter_desc == p) %>%
-                        ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr)) +
+                        ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr,
+                                      text = paste0('Monitoring Period End Date: ', monitoring_period_end_date,
+                                                    '<br>Concentration: ', dmr_value_nmbr, ' ', punits),
+                                      group = p)) +
                         geom_line(color = '#01665e') +
                         geom_area(position = position_dodge(width = 1), fill = '#c7eae5', alpha = .5) +
                         xlab('Date') +
@@ -442,7 +445,8 @@ shinyServer(function(input, output) {
 
                                              } else { pl }
                                                  
-                                             ggplotly(pl)
+                                             ggplotly(pl, tooltip = NA)     
+                                             # ggplotly(pl, tooltip = c('text'))
                                              })
 
                                          ) # Main Panel
