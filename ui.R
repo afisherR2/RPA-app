@@ -150,7 +150,7 @@ shinyUI(
           
           p('A water quality standards excel formatted template can be found',
           tags$a(href = 'RPTOOL_WQS_Template.xlsx',
-                 'here.', target = 'blank'))),
+                 'here.', target = 'blank', download = 'RPTOOL_WQS_Template.xlsx'))),
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
                           p('To start, enter a NPDES ID in the ', strong('NPDES ID Input'), ' field
