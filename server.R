@@ -36,58 +36,51 @@ RWC <- function(value, p, dr){
     RWCval$n <- n
     RWCval$max <- max
     
-    m <- mean(df) %>% # mean
-        round(2)
+    m <- mean(df) 
     
     sd <- sd(df) # standard deviation
     
-    RWCval$m <- m
-    RWCval$sd <- sd
+    RWCval$m <- m %>% 
+        round(2)
+    RWCval$sd <- sd %>% 
+        round(2)
     
     # coefficient of variation
     if (n > 10) {
-        cv <- round(sd/m,2)
+        # cv <- round(sd/m,2)
+        cv <- (sd/m)
     } else {
         cv <- 0.6
     }
     
-    RWCval$cv <- cv
+    RWCval$cv <- cv %>% 
+        round(2)
     
     cv2 <- cv^2 # cv squared
     
     # Percentile Pn
-    # for n > 20, n = 20, else (1 - 0.95)^(1/n)
-    if (n > 20) {
+    # for n >= 20, n = 20, else (1 - 0.95)^(1/n)
+    if (n >= 20) {
         x <- (1 - 0.95)^(1/20)
     } else {
         x <- (1 - 0.95)^(1/n)}
     
-    # log transform for percentile and z score
-    df_ln <- df %>% 
-        log()
-    
-    m_ln <- mean(df_ln)
-    sd_ln <- sd(df_ln)
-    
     # z score
     z95 <- 1.645
-    zx <- ((quantile(df_ln, x) - m_ln)/sd_ln) %>% 
-        unname() %>% 
-        round(3)
+    zx <- qnorm(x) 
     
     RWCval$z95 <- z95
-    RWCval$zx <- zx
+    RWCval$zx <- round(zx,3)
     
     # FROM "notes on PR DMR and RPA Tools" page 5 - on PR Qlick ShapePoint
     RPM <- (exp(z95*log(1+cv2)^0.5 - (0.5*log(1+cv2)))) / (exp(zx*log(1+cv2)^0.5 - (0.5*log(1+cv2))))
-
-    RWCval$RPM <- RPM %>% 
+    
+    RWCval$RPM <- RPM %>%
         round(2)
     
-    RWC <- round(max * unname(RPM) * as.numeric(dr), 1)
+    RWC <- round(max * RPM / as.numeric(dr), 2)
     
-    RWCval$RWC <- RWC %>% 
-        round(2)
+    RWCval$RWC <- RWC
     
     return(RWCval)
 }

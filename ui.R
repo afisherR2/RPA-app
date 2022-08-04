@@ -144,12 +144,12 @@ shinyUI(
           the U.S. Government regarding the accuracy, completeness, or currency 
           of this information.'),
           
-          p('For R2 Reasonable Potential Tool questions, bugs, feedback, or modification 
-          suggestions, contact Adam Fisher at', tags$a(href = 'mailto:fisher.adam@epa.gov', 
+          p('For questions, feedback, bugs, or modification suggestions, 
+            contact Adam Fisher at', tags$a(href = 'mailto:fisher.adam@epa.gov', 
                                                        'fisher.adam@epa.gov', target = 'blank', '.')),
           
           p('A water quality standards excel formatted template can be found',
-          tags$a(href = 'https://usepa-my.sharepoint.com/:x:/r/personal/fisher_adam_epa_gov/_layouts/15/Doc.aspx?sourcedoc=%7BA0FB161C-4D7E-4E21-9D4E-A6F8021CC9AC%7D&file=RPTOOL_WQS_Template.xlsx&action=default&mobileredirect=true',
+          tags$a(href = 'RPTOOL_WQS_Template.xlsx',
                  'here.', target = 'blank'))),
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
