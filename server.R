@@ -326,6 +326,7 @@ shinyServer(function(input, output) {
                         theme_light(base_size = 15) +
                         scale_x_date(date_breaks = '1 year',
                                      date_labels = '%Y') 
+                        # theme(text = element_text(family = 'Merriweather'))
                     
                     # time series plot for report
                     ppl <- reactive({
@@ -420,21 +421,25 @@ shinyServer(function(input, output) {
                                              
                                              if (input$Maxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = pstats$max,
-                                                                       color = '#dfc27d', linetype = 'solid')}
+                                                                       color = '#dfc27d', linetype = 'solid') +
+                                                     theme(text = element_text(family = 'Merriweather'))}
 
                                              if (input$SBxbox == TRUE && is.na(wqsb) == FALSE) {
                                                  pl <- pl + geom_hline(yintercept = wqsb,
-                                                                       color = '#bf812d', linetype = 'dotted')}
+                                                                       color = '#bf812d', linetype = 'dotted') +
+                                                     theme(text = element_text(family = 'Merriweather'))}
                                                  
                                              if (input$SDxbox == TRUE && is.na(wqsd) == FALSE) {
                                                  pl <- pl + geom_hline(yintercept = wqsd,
-                                                                       color = '#8c510a', linetype = 'longdash')}
+                                                                       color = '#8c510a', linetype = 'longdash') +
+                                                     theme(text = element_text(family = 'Merriweather'))}
                                                  
                                              if (input$RWCxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = pstats$RWC,
-                                                                       color = '#543005', linetype = 'dashed') 
+                                                                       color = '#543005', linetype = 'dashed')  +
+                                                     theme(text = element_text(family = 'Merriweather'))
 
-                                             } else { pl }
+                                             } else { pl + theme(text = element_text(family = 'Merriweather')) }
                                                  
                                              ggplotly(pl, tooltip = NA)     
                                              # ggplotly(pl, tooltip = c('text'))
@@ -468,7 +473,7 @@ shinyServer(function(input, output) {
                                                                        unts = punits,
                                                                        nsam = pstats$n,
                                                                        pmn = pstats$min,
-                                                                       pmean = pstats$mean,
+                                                                       pmean = pstats$m,
                                                                        pmx = pstats$max,
                                                                        RWC = pstats$RWC,
                                                                        pcv = pstats$cv,
