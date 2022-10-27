@@ -352,14 +352,15 @@ shinyServer(function(input, output) {
                                     as_tibble() %>% 
                             select(npdes_id, perm_feature_nmbr, parameter_desc,
                                    monitoring_period_end_date, dmr_value_nmbr, 
-                                   dmr_unit_desc, nodi_code) %>% 
+                                   dmr_unit_desc) %>% # nodi_code
+                            
                             rename(`NPDES ID` = npdes_id) %>% 
                             rename(Outfall = perm_feature_nmbr) %>% 
                             rename(Parameter = parameter_desc) %>% 
                             rename(`Monitoring Period` = monitoring_period_end_date) %>% 
                             rename(Value = dmr_value_nmbr) %>% 
-                            rename(Unit = dmr_unit_desc) %>% 
-                            rename(`NODI Code` = nodi_code)
+                            rename(Unit = dmr_unit_desc)
+                            # rename(`NODI Code` = nodi_code)
                     })
                 
                     tabPanel(title = h3(p), # tab panel for each parameter
