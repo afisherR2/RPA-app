@@ -146,28 +146,33 @@ shinyUI(
           
           p('For questions, feedback, bugs, or modification suggestions, 
             contact Adam Fisher at', tags$a(href = 'mailto:fisher.adam@epa.gov', 
-                                                       'fisher.adam@epa.gov', target = 'blank', '.')),
-          
-          p('A water quality standards excel formatted template can be found',
-          tags$a(href = 'RPTOOL_WQS_Template.xlsx',
-                 'here.', target = 'blank', download = 'RPTOOL_WQS_Template.xlsx'))),
+                                                       'fisher.adam@epa.gov', target = 'blank', '.'))),
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
                           p('To start, enter a NPDES ID in the ', strong('NPDES ID Input'), ' field
           and upload a formatted water quality standard excel file in the ', strong('WQS File Upload'), '
           field. Select the down arrow button to proceed to the next 
-          section. Facility information for the NPDES ID will display with the
+          section.'),
+          
+          p('Facility information corresponding to the NPDES ID will display with the
           external outfalls discharging from the facility. Select an outfall to evaluate and 
-          select the down arrow button. Concentration based effluents discharged from the 
+          select the down arrow button.'),
+          
+          p('Concentration based effluents discharged from the 
           selected outfall will apear below. 
           Choose between various discharge effluents to view summary statistics, water quality 
           standards, the Receiving Water Concentration (RWC), and 
           a discharge history plot. Change the Dilution Ratio 
-          or select various limits to view on the plot.
-          The ', strong('Download'),' button will download a formatted PDF containing 
+          or select various limits to view on the plot.'),
+          
+          p(' Select the ', strong('Download'),' button to save a formatted PDF containing 
           facility information, summary statistics, the discharge history plot, 
           detailed Receiving Water Concentration calculations,
-          and the raw data used in the calculations.'))),
+          and the raw data used in the calculations.'),
+          
+          p('A formatted water quality standards excel template can be found',
+            tags$a(href = 'RPTOOL_WQS_Template.xlsx',
+                   'here.', target = 'blank', download = 'RPTOOL_WQS_Template.xlsx')))),
 	
 # NPDES ID input and WQS csv
 	fluidRow(
