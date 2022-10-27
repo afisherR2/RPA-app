@@ -1,5 +1,6 @@
 ---
 title: 'R2 Reasonable Potential Tool Parameter Report'
+date: "Compiled on `r format(Sys.time(), '%d %B, %Y')`"
 
 # css: www/style.css
 params:
@@ -39,8 +40,6 @@ knitr::opts_chunk$set(echo = FALSE)
 \definecolor{sbcolor}{RGB}{191,129,45}
 \definecolor{sdcolor}{RGB}{140,81,10}
 \definecolor{rwccolor}{RGB}{84,48,5}
-
-`r params$dat`
 
 # **`r params$NPDES` - `r params$outfall` : `r params$param`**
 
@@ -82,13 +81,13 @@ params$pplot
 *calculations from 1991 Technical Support Document pgs 51-55*
 \
 \begin{align*}
-Number of samples & = n\\
-Maximum effluent concentration & = max\\
-Dilution Ratio & = DR\\
-Coefficient of Variation (CV) & = S_{n}/\mu or 0.6 when n \le 10\\
-Z-statistic & = Z_{x}\\
-RPM & = \displaystyle \frac{exp(Z_{95}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}{exp(Z_{x}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}\\
-RWC & = maximum effluent concentration * RPM * Dilution Ratio\\
+\text {Number of samples} & = n\\
+\text {Maximum effluent concentration} & = max\\
+\text {Dilution Ratio} & = DR\\
+\text {Coefficient of Variation (CV)} & = S_{n}/\mu \text { or 0.6 when } n \le 10\\
+\text {Z-statistic} & = Z_{x}\\
+\text {Reasonable Potential Multiplier (RPM)} & = \displaystyle \frac{exp(Z_{95}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}{exp(Z_{x}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}\\
+\text {Receiving Water Concentration} & = max * RPM / \text {Dilution Ratio}\\
 \\
 n & = `r params$nsam`\\
 max & = `r params$pmx`\\
