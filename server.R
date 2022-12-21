@@ -181,13 +181,37 @@ shinyServer(function(input, output) {
     })
     
 # BUTTONS ----------------------------------------------------------------------
+        
 # First next button
-    output$nextBtn <- renderUI({
-        actionButton('nextBtn', 
-                     label = '',
-                     icon = icon('angle-down'))})
-
-    
+        output$nextBtn <- renderUI({
+            actionButton('nextBtn', 
+                         label = '',
+                         icon = icon('angle-down'))})
+        
+# Link to Criteria Button
+        observeEvent(input$nextBtn, {
+            
+            req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+            
+            crit <- read.csv('www/CRITERIA_SOURCES.csv') # read in criteria source table
+            
+            # match NPDES ID to Entity_Abbr in criteria_sources.csv
+            crit_url <- crit %>% 
+                filter(ï..ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% 
+                select(CRIT_SOURCE1) %>% 
+                pull()
+            
+            # constructing onclick url
+            crit_url <- paste0('window.open(', "'", crit_url, "'", ')')
+           
+            
+            output$critBtn <- renderUI({
+                actionButton('critBtn',
+                             label = 'Show me the Standards',
+                             onclick = crit_url)
+            }) 
+        })
+        
 # Second next button 
     observeEvent(input$nextBtn, {
         
@@ -208,7 +232,7 @@ shinyServer(function(input, output) {
             dmr() %>%
                 filter(perm_feature_nmbr == as.character(input$radiob) & # checkbox
                            statistical_base_type_code == 'MAX' & # statistical base type code
-                           monitoring_location_code == 1 & # monitoring location
+                           monitoring_location_code == 1 & # OR 'EG' monitoring location (gross effluent)
                            value_type_code == 'C3' & # concentration based measurements
                            perm_feature_type_code == 'EXO' & # external outfall
                             !(dmr_value_nmbr == '')) %>% # REMOVE dmr_value_nmbr with missing values
@@ -325,8 +349,7 @@ shinyServer(function(input, output) {
                         ylab(paste(p, '(', punits, ')')) +
                         theme_light(base_size = 15) +
                         scale_x_date(date_breaks = '1 year',
-                                     date_labels = '%Y') 
-                        # theme(text = element_text(family = 'Merriweather'))
+                                     date_labels = '%Y')
                     
                     # time series plot for report
                     ppl <- reactive({
