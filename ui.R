@@ -89,7 +89,6 @@ shinyUI(
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
 	     <p> <b>Created by: Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Water Division Data Management Coordinator</b>
-          
        <br> <b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Karen O'Brien (obrien.karen@epa.gov), US EPA Region 2, Water Division NPDES Permit Team</b></p>
 	   </div>
@@ -128,7 +127,7 @@ shinyUI(
           (as defined in the EPA', tags$a(href = 'https://www3.epa.gov/npdes/pubs/owm0264.pdf', '1991 Technical Support Document for Water Quality-Based
           Toxics Control', target = 'blank'), ', pages 51-55). The Receiving Water Concentration
           calculations assume a 95% confidence level and a 95% probability basis. Please review the
-          Technical Support Document for information on the Receiving Water Concentration.'),
+          Technical Support Document for further inquiry.'),
       
           
           p('The tool specifically analyzes effluent meeting the following criteria: 
@@ -137,9 +136,9 @@ shinyUI(
           reported as gross effluent, 
           and discharged from external outfalls. 
           Non-detect values are NOT represented in this analysis. Discharge data for
-          the previous 5 years is extracted from the Enforcement and Compliance History Online
-          database (ECHO), and is taken "as is" - no data cleaning
-          or scrubbing has been performed.'),
+          the previous 5 years are extracted from the Enforcement and Compliance History Online
+          database', tags$a(href = 'https://echo.epa.gov', '(ECHO)', target = 'blank'), ' 
+          and are taken "as is" - no data cleaning or scrubbing has been performed.'),
         
           
           p('No warranty, express or implied, is made by EPA or any other agency of 
