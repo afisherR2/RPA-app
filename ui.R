@@ -88,8 +88,10 @@ shinyUI(
        <div class='panel-pane pane-node-content'>
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
-	     <p> <b>Created by Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Water Division Data Management Coordinator</b></p>
-
+	     <p> <b>Created by: Adam Fisher (fisher.adam@epa.gov), US EPA Region 2, Water Division Data Management Coordinator</b>
+          
+       <br> <b> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Karen O'Brien (obrien.karen@epa.gov), US EPA Region 2, Water Division NPDES Permit Team</b></p>
 	   </div>
 	   </div>
 	   </div>
@@ -132,7 +134,7 @@ shinyUI(
           p('The tool specifically analyzes effluent meeting the following criteria: 
           concentration based effluent,
           reported daily maximum concentration,
-          discharged from monitoring location code 1, 
+          reported as gross effluent, 
           and discharged from external outfalls. 
           Non-detect values are NOT represented in this analysis. Discharge data for
           the previous 5 years is extracted from the Enforcement and Compliance History Online
