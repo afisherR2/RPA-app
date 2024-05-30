@@ -197,7 +197,7 @@ shinyServer(function(input, output) {
             
             # match NPDES ID to Entity_Abbr in criteria_sources.csv
             crit_url <- crit %>% 
-                filter(ï..ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% 
+                filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% 
                 select(CRIT_SOURCE1) %>% 
                 pull()
             
@@ -207,7 +207,7 @@ shinyServer(function(input, output) {
             
             output$critBtn <- renderUI({
                 actionButton('critBtn',
-                             label = 'Show me the Standards',
+                             label = 'Link to Standards',
                              onclick = crit_url)
             }) 
         })
@@ -316,6 +316,20 @@ shinyServer(function(input, output) {
                             filter(parameter_desc == p) %>%
                             select(dmr_unit_desc) %>%
                             unique()
+                        
+                    # units - from WQS file
+                    if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
+                        wunits <- select(filter(WQSdf(),
+                                                PARAMETER_DESC == p), UNIT)$UNIT
+                    }
+                    else {
+                        wunits <- NA
+                    }
+                        
+                        # wunits <- WQSdf() %>% 
+                        #     filter(PARAMETER_DESC == p) %>%
+                        #     select(UNIT) %>%
+                        #     unique()
                     
                     # WQS SB
                     if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
@@ -421,12 +435,12 @@ shinyServer(function(input, output) {
                                              h5(renderText(
                                                  paste('WQS - SB :',
                                                        wqsb, ' ', 
-                                                       punits))),
+                                                       wunits))), #punits
                                              
                                              h5(renderText(
                                                  paste('WQS - SD :', 
                                                        wqsd, ' ', 
-                                                       punits))),
+                                                       wunits))), #punits
                                              
                                              br(),
                                              

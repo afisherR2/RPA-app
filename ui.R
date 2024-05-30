@@ -15,7 +15,6 @@ library(tools)
 library(tinytex)
 library(xml2)
 
-
 # runApp(display.mode = "showcase")
 
 
@@ -183,21 +182,30 @@ shinyUI(
 	  br(),
 
 	    column(4, offset = 1,
-	           textInput('NPDESID', label = h3('NPDES ID Input'))),
+	           textInput('NPDESID', label = h3('NPDES ID Input'),
+	                     value = 'PR0024163')),
 	    
 	  
 	    column(4, offest = 1,
 	           fileInput('WQSinput', label = h3('WQS File Upload'),
 	                     multiple = FALSE,
-	                     accept = c('.xlsx'))
+	                     accept = c('.xlsx'),
+	                     placeholder = 'PR2022Standards-RPTool.xlsx')
 	           )),
 	
-# First NEXT button
+# First NEXT button  
   fluidRow(
     column(2, offset = 11,
            uiOutput('nextBtn'))),
+
+  br(),
+
+# Criteria Button
+  fluidRow(
+    column(3, offset = 10,
+                  uiOutput('critBtn'))),
   
-  	br(),
+
   	br(),
   	hr(),
 	
