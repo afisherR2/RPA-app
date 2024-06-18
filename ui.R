@@ -135,7 +135,7 @@ shinyUI(
           reported as gross effluent, 
           and discharged from external outfalls. 
           Non-detect values are NOT represented in this analysis. Discharge data for
-          the previous 5 years are extracted from the Enforcement and Compliance History Online
+          the previous 10 years are extracted from the Enforcement and Compliance History Online
           database', tags$a(href = 'https://echo.epa.gov', '(ECHO)', target = 'blank'), ' 
           and are taken "as is" - no data cleaning or scrubbing has been performed.'),
         

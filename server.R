@@ -152,7 +152,7 @@ shinyServer(function(input, output) {
     dmr <- eventReactive(input$nextBtn, {
        req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
         echoGetEffluent(p_id = input$NPDESID, # pull DMR
-                        start_date = format(today() %m-% years(5), '%m/%d/%Y'), # 5 years ago
+                        start_date = format(today() %m-% years(10), '%m/%d/%Y'), # 10 years ago
                         end_date = format(today(), '%m/%d/%Y')) %>% # todays date
             suppressWarnings() # suppress parsing warning
         
@@ -302,14 +302,22 @@ shinyServer(function(input, output) {
             
             # useShinyjs()
             
-            map(paramtab$nparam, # map over the list of parameters
+            map(paramtab$nparam, # map over the list of parameters - parameters are designated with 'p'
                 function(p){
                     
                     pstats <- RWC(dmr_of(), p, input$DR) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+
                     
                     # dates of RP evaluation
-                    sdate = format(today() %m-% years(5), '%m/%d/%Y') # 5 years ago
-                    edate = format(today(), '%m/%d/%Y') # todays date
+                    evdates <- dmr_of() %>% 
+                      filter(parameter_desc == p) %>%
+                      select(monitoring_period_end_date) %>%
+                      summarise(min = min(monitoring_period_end_date),
+                                max = max(monitoring_period_end_date))
+                    
+                    sdate <- evdates$min # earliest sample date for selected p
+                    edate <- evdates$max # todays date
+
                     
                     # units - from DMR file
                         punits <- dmr_of() %>%
@@ -406,7 +414,8 @@ shinyServer(function(input, output) {
                                      fluidRow(
                                          sidebarLayout(
                                              sidebarPanel(
-
+                                               
+                                             # Summary statistics
                                              h4(strong(renderText('Summary Stats'))),
                                              
                                              br(),
@@ -448,6 +457,19 @@ shinyServer(function(input, output) {
                                                  paste('RWC : ', 
                                                        pstats$RWC, ' ', 
                                                        punits))),
+                                             
+                                             br(),
+                                             
+                                             # Date range slider
+                                             
+                                             output$Dslider <- renderUI(
+                                               sliderInput('dateSlider', 'Date Range:',
+                                                           min = as.Date(sdate, '%Y-%m-%d'), 
+                                                           max = as.Date(edate, '%Y-%m-%d'),
+                                                           value = c(as.Date(sdate, '%Y-%m-%d'), as.Date(edate, '%Y-%m-%d')),
+                                                           ticks = FALSE,
+                                                           timeFormat = '%Y')),
+                                             
 
                                              width = 4), # width of the panel
                                              
@@ -455,6 +477,9 @@ shinyServer(function(input, output) {
                                          mainPanel(
                                              
                                              output$pplot <- renderPlotly({
+                                               
+                                               pl <- pl + coord_cartesian(xlim = input$dateSlider)
+                                               
                                              
                                              if (input$Maxbox == TRUE) {
                                                  pl <- pl + geom_hline(yintercept = pstats$max,
