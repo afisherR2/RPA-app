@@ -10,6 +10,27 @@ library(readxl)
 
 
 
+# read in wqs
+# read in REF param pollutant xwalk from website
+# get unique param codes from DMR
+# subset dmr params by wqs cas#
+# table of dmr param codes and associated wqs standards
+
+GET('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx', 
+                          write_disk(tf <- tempfile(fileext = ".xlsx")))
+
+wqsraw <- read_excel(tf,
+                     skip = 206) # skip the first 206 lines bc the flat file is formatted weird
+
+wqsfine <- wqsraw %>% 
+  filter(ENTITY_ABBR == substr('PR0024163', 1, 2)) %>% 
+  
+  select(c(ENTITY_NAME, CAS_NO, POLLUTANT_NAME, CRITERION_VALUE, UNIT_NAME,
+           CRITERIATYPEAQUAHUMHLTH, CRITERIATYPEFRESHSALTWATER,
+           USE_CLASS_NAME_LOCATION_ETC, EFFECTIVE_DATE, LAST_ENTRY_IN_DB)) 
+
+
+
 
 dft <- echoSDWGetSystems(p_reg = '02')
 
@@ -18,6 +39,9 @@ wqsTEST <- readxl::read_xlsx('PuertoRico2019Standards-RPToolEDIT.xlsx')
 dft <- echoWaterGetFacilityInfo(p_pid = 'PR0024163',
                                 output = 'df',
                                 qcolumns = '1,3,4,5,6,7')
+
+unique(df$parameter_code)
+
 names(dft)
 
 df <- echoGetEffluent(p_id = 'PR0024163',
@@ -150,17 +174,17 @@ dfmod %>%
 
 
 
-p <- df %>% 
-    filter(parameter_desc == 'Phenols' &
-             value_type_code == 'C3') %>% # Concentration3 - max
+p <- dfmod %>% 
+    # filter(parameter_desc == 'Enterococci' &
+    #          value_type_code == 'C3') %>% # Concentration3 - max
     ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr)) +
     geom_line(color = '#01665e') +
     geom_area(fill = '#c7eae5', alpha = .5) +
     xlab('Date') +
-    ylab('Phenols') +
+    # ylab('Phenols') +
     theme_light(base_size = 15) +
     geom_hline(yintercept = max(filter(df,
-                                       parameter_desc == 'Phenols' & # parameter
+                                       parameter_desc == 'Lead, total [as Pb]' & # parameter
                                          value_type_code == 'C3' & # Quantity2 - daily max
                                          perm_feature_nmbr == '001',
                                          nodi_code != 'B')$dmr_value_nmbr),
@@ -195,4 +219,6 @@ wqs <- wqs %>%
 wqs$POLLUTANT_NAME %>% 
   unique()
 
+
+echoWaterGetParams(code = )
   

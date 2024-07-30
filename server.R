@@ -14,6 +14,7 @@ library(readxl)
 library(tools)
 library(tinytex)
 library(xml2)
+library(httr)
 
 
 # receiving water concentration function ---------------------------------------
@@ -106,17 +107,17 @@ shinyServer(function(input, output) {
                         icon = NA, color = '#b30000')
         
         # Throw error if the first two characters of the NPDES ID does not match the first two characters of the WQS file
-        feedbackDanger('NPDESID', substr(input$WQSinput$name, 1, 2) != substr(input$NPDESID, 1, 2), 
-                       'please double check the NPDES ID and WQS file',
-                       icon = NA, color = '#b30000')
+        # feedbackDanger('NPDESID', substr(input$WQSinput$name, 1, 2) != substr(input$NPDESID, 1, 2), 
+        #                'please double check the NPDES ID and WQS file',
+        #                icon = NA, color = '#b30000')
         
-       feedbackDanger('WQSinput', file_ext(input$WQSinput$datapath) != 'xlsx', # BREAK if NPDES ID isnt valid
-       'please upload a properly formatted WQS file',
-       icon = NA, color = '#b30000')
+       # feedbackDanger('WQSinput', file_ext(input$WQSinput$datapath) != 'xlsx', # BREAK if NPDES ID isnt valid
+       # 'please upload a properly formatted WQS file',
+       # icon = NA, color = '#b30000')
 
         req(nchar(input$NPDESID) == 9) # BREAK if NPDES ID isnt 9 char
-       req(substr(input$WQSinput$name, 1, 2) == substr(input$NPDESID, 1, 2)) # break if NPDES ID doesn't match WQS file
-       req(file_ext(input$WQSinput$datapath) == 'xlsx') # BREAK check for WQS file upload
+       # req(substr(input$WQSinput$name, 1, 2) == substr(input$NPDESID, 1, 2)) # break if NPDES ID doesn't match WQS file
+       # req(file_ext(input$WQSinput$datapath) == 'xlsx') # BREAK check for WQS file upload
         
         # showNotification('Let me just pull some files from ICIS-NPDES', type = 'message')
         
@@ -130,7 +131,7 @@ shinyServer(function(input, output) {
 # NPDES ID validity check ---------------------------------------------------
     dfinfo2 <- reactive({
         req(dfinfo1()) # BREAK dfinfo1
-       req(input$WQSinput) # BREAK for WQS upload
+       # req(input$WQSinput) # BREAK for WQS upload
         
         feedbackDanger('NPDESID', nrow(dfinfo1()) != 1, # BREAK if NPDES ID isnt valid
                        'please enter a valid NPDES ID',
@@ -142,15 +143,19 @@ shinyServer(function(input, output) {
         })
     
 # Display NPDES ID and Address -------------------------------------------------
-        output$facility <- renderText(dfinfo2()$CWPName)
-        output$street <- renderText(dfinfo2()$CWPStreet)
-        output$citystate <- renderText({paste(dfinfo2()$CWPCity, 
-                                              dfinfo2()$CWPState,
-                                              sep = ', ')})
+    observeEvent(input$nextBtn, {
+      
+      output$facility <- renderText(dfinfo2()$CWPName)
+      output$street <- renderText(dfinfo2()$CWPStreet)
+      output$citystate <- renderText({paste(dfinfo2()$CWPCity, 
+                                            dfinfo2()$CWPState,
+                                            sep = ', ')})
+    })
+
         
 ### Pull DMR with echor after first next button --------------------------------
     dmr <- eventReactive(input$nextBtn, {
-       req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
+       req(dfinfo2()) # BREAK for WQSinput and dfinfo2
         echoGetEffluent(p_id = input$NPDESID, # pull DMR
                         start_date = format(today() %m-% years(10), '%m/%d/%Y'), # 10 years ago
                         end_date = format(today(), '%m/%d/%Y')) %>% # todays date
@@ -159,15 +164,15 @@ shinyServer(function(input, output) {
     }, ignoreNULL = FALSE)
     
 # read WQS file ----------------------------------------------------------------
-    WQSdf <- eventReactive(input$nextBtn, {
-        req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
-        WQSdf <- read_xlsx(input$WQSinput$datapath, sheet = 'WQS')
-        return(WQSdf)
-    })
+    # WQSdf <- eventReactive(input$nextBtn, {
+    #     req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
+    #     WQSdf <- read_xlsx(input$WQSinput$datapath, sheet = 'WQS')
+    #     return(WQSdf)
+    # })
     
 # Select outfall to use --------------------------------------------------------
     observeEvent(input$nextBtn,{
-       req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+       req(dfinfo2())  # BREAK for WQSinput and dfinfo2
         
         otfl <- dmr() %>%  # filter for only internal outfalls
             filter(perm_feature_type_code == 'EXO') %>% 
@@ -188,34 +193,47 @@ shinyServer(function(input, output) {
                          label = '',
                          icon = icon('angle-down'))})
         
-# Link to Criteria Button
+# Read in WQS from OST criteria search tool
+        wqsraw <- eventReactive(input$nextBtn, {
+            
+            req(dfinfo2())  # BREAK for WQSinput
+            
+            # download criteria form EPA OST Criteria Search Tool
+            GET('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx', 
+                write_disk(tf <- tempfile(fileext = ".xlsx")))
+
+            wqsraw <- read_excel(tf,
+                                 skip = 206) # skip the first 206 lines b/c the flat file is formatted weird
+        })
+        
+# link to standards
         observeEvent(input$nextBtn, {
-            
-            req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
-            
-            crit <- read.csv('www/CRITERIA_SOURCES.csv') # read in criteria source table
-            
-            # match NPDES ID to Entity_Abbr in criteria_sources.csv
-            crit_url <- crit %>% 
-                filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% 
-                select(CRIT_SOURCE1) %>% 
-                pull()
-            
-            # constructing onclick url
-            crit_url <- paste0('window.open(', "'", crit_url, "'", ')')
-           
-            
-            output$critBtn <- renderUI({
-                actionButton('critBtn',
-                             label = 'Link to Standards',
-                             onclick = crit_url)
-            }) 
+
+          # match NPDES ID to Entity_Abbr in criteria_sources.csv
+          crit_source <- read.csv('www/CRITERIA_SOURCES.csv')
+          
+          crit_url <- crit_source %>%
+            filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>%
+            select(CRIT_SOURCE1) %>%
+            pull() # pull url to standards
+
+          # constructing onclick url
+          crit_url <- paste0('window.open(', "'", crit_url, "'", ')')
+
+
+          # create button to standards
+          output$critBtn <- renderUI({
+            actionButton('critBtn',
+                         label = 'Link to Standards',
+                         onclick = crit_url)
+          })
+
         })
         
 # Second next button 
     observeEvent(input$nextBtn, {
         
-        req(input$WQSinput, dfinfo2())  # BREAK for WQSinput and dfinfo2
+        req(dfinfo2())  # BREAK for WQSinput and dfinfo2
         
         output$nextBtn2 <- renderUI(actionButton('nextBtn2', 
                                                  label = '',
@@ -246,6 +264,39 @@ shinyServer(function(input, output) {
                        dmr_unit_desc = recode(dmr_unit_desc,
                                                `#/100mL` = 'MPN/100mL'))
     }, ignoreNULL = FALSE)
+    
+    
+# filter standards for entity abbreviation and cross walk with CST and WQP
+    wqs <- eventReactive(input$nextBtn2, {
+      
+    # cross reference with ECHO_CST_Xwalk file - cross references CST parameter names and ECHO parameter names
+      # xwalk <- read_excel('ECHO_CST_Xwalk.xlsx')
+      
+      
+      
+      wqsfine <- wqsraw() %>% 
+        filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% 
+        
+        select(c(ENTITY_NAME, STD_POLL_ID, STD_POLLUTANT_NAME, CRITERION_VALUE, UNIT_NAME,
+                 CRITERIATYPEAQUAHUMHLTH, CRITERIATYPEFRESHSALTWATER,
+                 USE_CLASS_NAME_LOCATION_ETC_ID, USE_CLASS_NAME_LOCATION_ETC, EFFECTIVE_DATE, LAST_ENTRY_IN_DB)) %>% 
+        
+        # cross walk ECHO parameter names with CST parameter names
+        mutate(PARAMETER_DESC_ECHO = across(STD_POLLUTANT_NAME, ~ with(xwalk, PARAMETER_DESC_ECHO[match(.x, STD_POLLUTANT_NAME_CST)]))) 
+
+      
+        
+        # rename columns
+        # rename(`State/Teritory Name` = ENTITY_NAME,
+        #        `Parameter` = POLLUTANT_NAME,
+        #        `Criterion Value` = CRITERION_VALUE,
+        #        `Unit` = UNIT_NAME,
+        #        `Criterion Type` = CRITERIATYPEAQUAHUMHLTH,
+        #        `Criterion Water Type` = CRITERIATYPEFRESHSALTWATER,
+        #        `Criterion Application` = USE_CLASS_NAME_LOCATION_ETC,
+        #        `Effective Date` = EFFECTIVE_DATE,
+        #        `Updated` = LAST_ENTRY_IN_DB)
+    })
     
 
 # Insert tabset for parameters -------------------------------------------------
@@ -326,9 +377,9 @@ shinyServer(function(input, output) {
                             unique()
                         
                     # units - from WQS file
-                    if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
-                        wunits <- select(filter(WQSdf(),
-                                                PARAMETER_DESC == p), UNIT)$UNIT
+                    if(p %in% wqs()$PARAMETER_DESC_ECHO == TRUE){
+                        wunits <- select(filter(wqs(),
+                                                PARAMETER_DESC_ECHO == p), UNIT_NAME)$UNIT_NAME
                     }
                     else {
                         wunits <- NA
@@ -340,9 +391,10 @@ shinyServer(function(input, output) {
                         #     unique()
                     
                     # WQS SB
-                    if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
-                        wqsb <- select(filter(WQSdf(),
-                                              PARAMETER_DESC == p), SB)$SB
+                    if(p %in% wqs()$PARAMETER_DESC_ECHO == TRUE){
+                        wqsb <- select(filter(wqs(),
+                                              PARAMETER_DESC_ECHO == p & USE_CLASS_NAME_LOCATION_ETC_ID == '5088'), 
+                                       USE_CLASS_NAME_LOCATION_ETC)$USE_CLASS_NAME_LOCATION_ETC
                     }
                     else {
                         wqsb <- NA
@@ -350,9 +402,10 @@ shinyServer(function(input, output) {
 
                     
                     #WQS SD
-                    if(p %in% WQSdf()$PARAMETER_DESC == TRUE){
-                        wqsd <- select(filter(WQSdf(),
-                                              PARAMETER_DESC == p), SD)$SD
+                    if(p %in% wqs()$PARAMETER_DESC_ECHO == TRUE){
+                        wqsd <- select(filter(wqs(),
+                                              PARAMETER_DESC_ECHO == p & USE_CLASS_NAME_LOCATION_ETC_ID == '5089'), 
+                                       USE_CLASS_NAME_LOCATION_ETC)$USE_CLASS_NAME_LOCATION_ETC
                     }
                     else {
                         wqsd <- NA
@@ -530,7 +583,7 @@ shinyServer(function(input, output) {
                                                                                          dfinfo2()$CWPState,
                                                                                          sep = ', '),
                                                                        outfall = input$radiob,
-                                                                       WQSfile = input$WQSinput$name,
+                                                                       # WQSfile = input$WQSinput$name,
                                                                        param = p,
                                                                        unts = punits,
                                                                        nsam = pstats$n,
