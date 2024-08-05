@@ -14,6 +14,8 @@ library(readxl)
 library(tools)
 library(tinytex)
 library(xml2)
+library(httr)
+library(stringr)
 
 # runApp(display.mode = "showcase")
 
@@ -186,12 +188,17 @@ shinyUI(
 	                     value = 'PR0024163')),
 	    
 	  
-	    column(4, offest = 1,
-	           fileInput('WQSinput', label = h3('WQS File Upload'),
-	                     multiple = FALSE,
-	                     accept = c('.xlsx'),
-	                     placeholder = 'PR2022Standards-RPTool.xlsx')
-	           )),
+	    # column(4, offest = 1,
+	    #        fileInput('WQSinput', label = h3('WQS File Upload'),
+	    #                  multiple = FALSE,
+	    #                  accept = c('.xlsx'),
+	    #                  placeholder = 'PR2022Standards-RPTool.xlsx')
+	    #        )),
+
+    column(4, offset = 1,
+           dateRangeInput('dateRange', label = h3('Dates for analysis'),
+                          start = today() %m-% years(10), end = today())
+           )),
 	
 # First NEXT button  
   fluidRow(
@@ -250,8 +257,8 @@ shinyUI(
 
   fluidRow(
       
-      column(3, offset = 1,
-             uiOutput('pdr')),
+      # column(3, offset = 1,
+      #        uiOutput('pdr')),
       
       column(2,
              uiOutput('pMaxbox')),

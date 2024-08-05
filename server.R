@@ -15,10 +15,12 @@ library(tools)
 library(tinytex)
 library(xml2)
 library(httr)
+library(stringr)
+library(tidyr)
 
 
 # receiving water concentration function ---------------------------------------
-RWC <- function(value, p, dr){
+RWC <- function(value, p, dr, dates1, dates2){ # value = , p = parameter, dr = dilution ratio, dates1 = dateslider input 1, dates2 = dateslider input 2
     
     # create empty list
     RWCval <- list()
@@ -27,10 +29,13 @@ RWC <- function(value, p, dr){
     db <- value %>% 
         filter(parameter_desc == p &
                    nodi_code != 'B') %>% 
+        filter(between(monitoring_period_end_date, dates1, dates2)) %>%  # fitler to only be inside the date range slider
         select(dmr_value_nmbr)
     
     df <- db$dmr_value_nmbr %>%  # sort
-        sort()
+        sort() %>% 
+      as.numeric()
+
     
     n <- length(df) # number of samples
     max <- max(df) # max of samples
@@ -157,8 +162,10 @@ shinyServer(function(input, output) {
     dmr <- eventReactive(input$nextBtn, {
        req(dfinfo2()) # BREAK for WQSinput and dfinfo2
         echoGetEffluent(p_id = input$NPDESID, # pull DMR
-                        start_date = format(today() %m-% years(10), '%m/%d/%Y'), # 10 years ago
-                        end_date = format(today(), '%m/%d/%Y')) %>% # todays date
+                        start_date = format(input$dateRange[1], '%m/%d/%Y'), # 10 years ago
+                        end_date = format(input$dateRange[2], '%m/%d/%Y')) %>% # todays date
+                        # start_date = format(today() %m-% years(10), '%m/%d/%Y'), # 10 years ago
+                        # end_date = format(today(), '%m/%d/%Y')) %>% # todays date
             suppressWarnings() # suppress parsing warning
         
     }, ignoreNULL = FALSE)
@@ -242,10 +249,23 @@ shinyServer(function(input, output) {
 
 
 # filter dmr by outfall checkbox, stat base, monitoring location ---------------
+    
+# download ECHO REF parameter file to link DMR parameter codes to xwalk pollutant codes
+    
+    echo_ref_p <- eventReactive(input$nextBtn2, { 
+      GET('https://echo.epa.gov/system/files/REF_Parameter.csv', 
+          write_disk(tf <- tempfile(fileext = ".csv")))
+      
+      echo_ref_p <- read.csv(tf)
+      })
+    
+    
 # change dmr value to numeric and monitoring period  to date
     dmr_of <- eventReactive(input$nextBtn2, {
         
         req(input$radiob)  # BREAK check if outfall is selected
+      
+      
         
             dmr() %>%
                 filter(perm_feature_nmbr == as.character(input$radiob) & # checkbox
@@ -260,19 +280,32 @@ shinyServer(function(input, output) {
                        dmr_value_nmbr, dmr_unit_desc, nodi_code) %>%
                 
                 mutate(dmr_value_nmbr = as.numeric(dmr_value_nmbr), # change to numeric
+                       parameter_code = str_remove(parameter_code, '^0+'), # remove leading zeros in parameter code
                        monitoring_period_end_date = as.Date(mdy(monitoring_period_end_date, tz = 'EST')), # change to date
-                       dmr_unit_desc = recode(dmr_unit_desc,
-                                               `#/100mL` = 'MPN/100mL'))
+                       dmr_unit_desc = recode(dmr_unit_desc, `#/100mL` = 'MPN/100mL'), # recode unit
+                       dmr_unit_desc = na_if(dmr_unit_desc, '')) %>% # if dmr unit is missing, replace with NA
+              
+              group_by(parameter_code) %>% # group by parameter code
+              fill(dmr_unit_desc, .direction = 'downup') %>% # fill NA unit values by parameter
+              ungroup() %>%  # ungroup
+              
+              # recode dmr parameter codes with pollutant codes
+              mutate(POLLUTANT_CODE_ECHO = across(parameter_code, ~ with(echo_ref_p(), POLLUTANT_CODE[match(.x, PARAMETER_CODE)]),
+                                                  .names = 'POLLUTANT_CODE_ECHO'), .before = parameter_code) %>%
+              unpack(POLLUTANT_CODE_ECHO)
+            
     }, ignoreNULL = FALSE)
     
     
+    # cross reference with ECHO_CST_Xwalk file - cross references CST parameter names and ECHO parameter names
+    xwalk <- eventReactive(input$nextBtn2, { 
+      xwalk <- read_excel('www/ECHO_CST_Xwalk.xlsx')
+      })
+    
+
 # filter standards for entity abbreviation and cross walk with CST and WQP
     wqs <- eventReactive(input$nextBtn2, {
-      
-    # cross reference with ECHO_CST_Xwalk file - cross references CST parameter names and ECHO parameter names
-      # xwalk <- read_excel('ECHO_CST_Xwalk.xlsx')
-      
-      
+
       
       wqsfine <- wqsraw() %>% 
         filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% 
@@ -282,20 +315,10 @@ shinyServer(function(input, output) {
                  USE_CLASS_NAME_LOCATION_ETC_ID, USE_CLASS_NAME_LOCATION_ETC, EFFECTIVE_DATE, LAST_ENTRY_IN_DB)) %>% 
         
         # cross walk ECHO parameter names with CST parameter names
-        mutate(PARAMETER_DESC_ECHO = across(STD_POLLUTANT_NAME, ~ with(xwalk, PARAMETER_DESC_ECHO[match(.x, STD_POLLUTANT_NAME_CST)]))) 
+        mutate(POLLUTANT_CODE_ECHO = across(STD_POLL_ID, ~ with(xwalk(), POLLUTANT_CODE[match(.x, STD_POLL_ID_CST)]),
+                                            .names = 'POLLUTANT_CODE_ECHO'),  .before = STD_POLL_ID) %>%
+        unpack(cols = POLLUTANT_CODE_ECHO)
 
-      
-        
-        # rename columns
-        # rename(`State/Teritory Name` = ENTITY_NAME,
-        #        `Parameter` = POLLUTANT_NAME,
-        #        `Criterion Value` = CRITERION_VALUE,
-        #        `Unit` = UNIT_NAME,
-        #        `Criterion Type` = CRITERIATYPEAQUAHUMHLTH,
-        #        `Criterion Water Type` = CRITERIATYPEFRESHSALTWATER,
-        #        `Criterion Application` = USE_CLASS_NAME_LOCATION_ETC,
-        #        `Effective Date` = EFFECTIVE_DATE,
-        #        `Updated` = LAST_ENTRY_IN_DB)
     })
     
 
@@ -303,10 +326,10 @@ shinyServer(function(input, output) {
 # code structure from: https://thatdatatho.com/how-to-create-dynamic-tabs-with-plotly-plots-in-r-shiny/
     observeEvent(input$nextBtn2, {
 
-        output$pdr <- renderUI(
-            numericInput('DR', 
-                         label = h3('Dilution Ratio:'), width = '50%',
-                         value = 1))
+        # output$pdr <- renderUI(
+        #     numericInput('DR', 
+        #                  label = h3('Dilution Ratio:'), width = '50%',
+        #                  value = 1))
             
         # icon color code, altered from: https://community.rstudio.com/t/colors-next-to-checkboxes-in-shiny/74908/7
         output$pMaxbox <- renderUI(
@@ -345,9 +368,13 @@ shinyServer(function(input, output) {
                           <div style="color:black;padding-left:5px;margin-left:-20px;\"><h3>RWC</h3></div></div>'),
                           # label = HTML(x_format('#543005',h3('RWC'))),
                           value = FALSE))
-            
         
-        paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
+        
+            
+        paramtab <- reactiveValues(
+          nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
+        
+        # paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
         
         output$tabs <- renderUI({ # render UI
             
@@ -356,16 +383,32 @@ shinyServer(function(input, output) {
             map(paramtab$nparam, # map over the list of parameters - parameters are designated with 'p'
                 function(p){
                     
-                    pstats <- RWC(dmr_of(), p, input$DR) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+                  # reactive element for summary stats and RWC calcclations
+                    pstats <- reactive({
+                      RWCvalues <- RWC(dmr_of(), p, pdr(), input$dateSlider[1], input$dateRange[2]) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+                      
+                      data.frame(
+                        n = RWCvalues$n,
+                        min = RWCvalues$min,
+                        m = RWCvalues$m,
+                        max = RWCvalues$max,
+                        RWC = RWCvalues$RWC,
+                        stringsAsFactors = FALSE)
+                    })
+                    
+                    # reactive element for dilution ration
+                    pdr <- reactive({
+                      as.numeric(input$DR)
+                    })
 
                     
                     # dates of RP evaluation
-                    evdates <- dmr_of() %>% 
+                    evdates <- dmr_of() %>%
                       filter(parameter_desc == p) %>%
                       select(monitoring_period_end_date) %>%
                       summarise(min = min(monitoring_period_end_date),
                                 max = max(monitoring_period_end_date))
-                    
+
                     sdate <- evdates$min # earliest sample date for selected p
                     edate <- evdates$max # todays date
 
@@ -376,36 +419,82 @@ shinyServer(function(input, output) {
                             select(dmr_unit_desc) %>%
                             unique()
                         
+                    # link DMR parameter desc p to dmr POLLUTANT_CODE
+                        pc <- dmr_of()  %>%
+                          filter(parameter_desc == p) %>%
+                          select(POLLUTANT_CODE_ECHO) %>%
+                          unique() %>% 
+                          pull() %>% 
+                          as.numeric()
+                        
                     # units - from WQS file
-                    if(p %in% wqs()$PARAMETER_DESC_ECHO == TRUE){
-                        wunits <- select(filter(wqs(),
-                                                PARAMETER_DESC_ECHO == p), UNIT_NAME)$UNIT_NAME
+                    if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
+                      
+                        wsbunits <- wqs() %>% 
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5088', '5087')) %>%  #5088 for class sb waters
+                          select(UNIT_NAME) %>% 
+                          distinct() %>% 
+                          pull() %>% 
+                          as.character()
+
+                        
+                        wsdunits <- wqs() %>% 
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5089', '5087', '5092')) %>%  #5089 for class sd waters
+                          select(UNIT_NAME) %>% 
+                          distinct() %>% 
+                          pull() %>% 
+                          as.character()
+                        
                     }
                     else {
-                        wunits <- NA
+                      wsbunits <- NA
+                      wsdunits <- NA
                     }
-                        
-                        # wunits <- WQSdf() %>% 
-                        #     filter(PARAMETER_DESC == p) %>%
-                        #     select(UNIT) %>%
-                        #     unique()
+
                     
                     # WQS SB
-                    if(p %in% wqs()$PARAMETER_DESC_ECHO == TRUE){
-                        wqsb <- select(filter(wqs(),
-                                              PARAMETER_DESC_ECHO == p & USE_CLASS_NAME_LOCATION_ETC_ID == '5088'), 
-                                       USE_CLASS_NAME_LOCATION_ETC)$USE_CLASS_NAME_LOCATION_ETC
+                    if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
+                      
+                        wqsb <- wqs() %>% 
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5088', '5087')) %>%  # 5088 for class SB waters and 5087 for surface waters
+                          select(CRITERION_VALUE) %>% 
+                          pull() %>% 
+                          str_remove(',') %>% 
+                          unique()
+                        
+                        # check to see if there is a value
+                        if (length(wqsb) == 0){
+                          
+                          wqsb <- NA
+                          
+                          # check for numeric or "See Equation"
+                        } else if (!is.na(as.numeric(wqsb)) == TRUE) {
+                          wqsb <- wqsb %>% 
+                            as.numeric()
+                        }
+
                     }
                     else {
                         wqsb <- NA
+
                     }
 
                     
                     #WQS SD
-                    if(p %in% wqs()$PARAMETER_DESC_ECHO == TRUE){
-                        wqsd <- select(filter(wqs(),
-                                              PARAMETER_DESC_ECHO == p & USE_CLASS_NAME_LOCATION_ETC_ID == '5089'), 
-                                       USE_CLASS_NAME_LOCATION_ETC)$USE_CLASS_NAME_LOCATION_ETC
+                    if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
+                      
+                        wqsd <-  wqs() %>% 
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5089', '5087', '5092')) %>%  # 5088 for class sd waters, 5087 for surface waters, and 5092 for SD/drinking water
+                          select(CRITERION_VALUE) %>% 
+                          pull() %>% 
+                          unique()
+                        
+                        # check for numeric or "See Equation"
+                        if (!is.na(as.numeric(wqsd)) == TRUE) {
+                          wqsd <- wqsd %>% 
+                            as.numeric()
+                        }
+                          
                     }
                     else {
                         wqsd <- NA
@@ -461,8 +550,10 @@ shinyServer(function(input, output) {
                             rename(Unit = dmr_unit_desc)
                             # rename(`NODI Code` = nodi_code)
                     })
+                    
                 
                     tabPanel(title = h3(p), # tab panel for each parameter
+
 
                                      fluidRow(
                                          sidebarLayout(
@@ -475,21 +566,21 @@ shinyServer(function(input, output) {
                                              
                                              h5(renderText(
                                                  paste('# Samples : ',
-                                                       pstats$n))),
+                                                       pstats()$n))),
                                              
                                              h5(renderText(
                                                  paste('Min : ',
-                                                       pstats$min, ' ',
+                                                       pstats()$min, ' ',
                                                        punits))),
                                              
                                              h5(renderText(
                                                  paste('Mean : ',
-                                                       pstats$m, ' ',
+                                                       pstats()$m, ' ',
                                                        punits))),
                                                  
                                              h5(renderText(
                                                  paste('Max : ',
-                                                      pstats$max, ' ',
+                                                      pstats()$max, ' ',
                                                       punits))),
                                              
                                              br(),
@@ -497,26 +588,35 @@ shinyServer(function(input, output) {
                                              h5(renderText(
                                                  paste('WQS - SB :',
                                                        wqsb, ' ', 
-                                                       wunits))), #punits
+                                                       wsbunits))), #punits
                                              
                                              h5(renderText(
                                                  paste('WQS - SD :', 
                                                        wqsd, ' ', 
-                                                       wunits))), #punits
+                                                       wsdunits))), #punits
                                              
                                              br(),
                                              
                                              h5(renderText(
                                                  paste('RWC : ', 
-                                                       pstats$RWC, ' ', 
+                                                       pstats()$RWC, ' ', 
                                                        punits))),
+                                             
+                                             br(),
+                                             
+                                             # dilution ratio
+                # NEED to make a reactive element
+                                             output$pdr <- renderUI(
+                                             numericInput('DR',
+                                                          label = h5('Dilution Ratio:'), width = '50%',
+                                                          value = 1)),
                                              
                                              br(),
                                              
                                              # Date range slider
                                              
                                              output$Dslider <- renderUI(
-                                               sliderInput('dateSlider', 'Date Range:',
+                                               sliderInput('dateSlider', h5('Date Range:'),
                                                            min = as.Date(sdate, '%Y-%m-%d'), 
                                                            max = as.Date(edate, '%Y-%m-%d'),
                                                            value = c(as.Date(sdate, '%Y-%m-%d'), as.Date(edate, '%Y-%m-%d')),
@@ -535,7 +635,7 @@ shinyServer(function(input, output) {
                                                
                                              
                                              if (input$Maxbox == TRUE) {
-                                                 pl <- pl + geom_hline(yintercept = pstats$max,
+                                                 pl <- pl + geom_hline(yintercept = pstats()$max,
                                                                        color = '#dfc27d', linetype = 'solid') +
                                                      theme(text = element_text(family = 'Merriweather'))}
 
@@ -550,7 +650,7 @@ shinyServer(function(input, output) {
                                                      theme(text = element_text(family = 'Merriweather'))}
                                                  
                                              if (input$RWCxbox == TRUE) {
-                                                 pl <- pl + geom_hline(yintercept = pstats$RWC,
+                                                 pl <- pl + geom_hline(yintercept = pstats()$RWC,
                                                                        color = '#543005', linetype = 'dashed')  +
                                                      theme(text = element_text(family = 'Merriweather'))
 
