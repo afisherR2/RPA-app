@@ -126,7 +126,7 @@ shinyUI(
           reasonable potential by comparing effluent discharge history with current water 
           quality standards and calculating the Receiving Water Concentration
           (as defined in the EPA', tags$a(href = 'https://www3.epa.gov/npdes/pubs/owm0264.pdf', '1991 Technical Support Document for Water Quality-Based
-          Toxics Control', target = 'blank'), ', pages 51-55). The Receiving Water Concentration
+          Toxics Control', target = 'blank'), ', pages 51-55 & Appendix E). The Receiving Water Concentration
           calculations assume a 95% confidence level and a 95% probability basis. Please review the
           Technical Support Document for further inquiry.'),
       
@@ -136,8 +136,9 @@ shinyUI(
           reported daily maximum concentration,
           reported as gross effluent, 
           and discharged from external outfalls. 
-          Non-detect values are NOT represented in this analysis. Discharge data for
-          the previous 10 years are extracted from the Enforcement and Compliance History Online
+          Non-detect values (reported as NODI Code = B) are replaced with the respective limit value
+          as repoted on the Discharge Monitoring Report. Discharge data for
+          the data range specified are extracted from the Enforcement and Compliance History Online
           database', tags$a(href = 'https://echo.epa.gov', '(ECHO)', target = 'blank'), ' 
           and are taken "as is" - no data cleaning or scrubbing has been performed.'),
         
@@ -152,20 +153,22 @@ shinyUI(
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
                           p('To start, enter a NPDES ID in the ', strong('NPDES ID Input'), ' field
-          and upload a formatted water quality standard excel file in the ', strong('WQS File Upload'), '
+          and the analysis date range  in the ', strong('Dates for Analysis'), '
           field. Select the down arrow button to proceed to the next 
           section.'),
           
           p('Facility information corresponding to the NPDES ID will display with the
-          external outfalls discharging from the facility. Select an outfall to evaluate and 
+          external outfalls discharging from the facility. A link to the corresponding WQS
+          will appear is available for reference. Select an outfall to evaluate and 
           select the down arrow button.'),
           
-          p('Concentration based effluents discharged from the 
+          p('Concentration based effluent discharged from the 
           selected outfall will apear below. 
-          Choose between various discharge effluents to view summary statistics, water quality 
+          Choose between various discharge parameters to view summary statistics, water quality 
           standards, the Receiving Water Concentration (RWC), and 
           a discharge history plot. Change the Dilution Ratio 
-          or select various limits to view on the plot.'),
+          or select various limits to view on the plot. Use the ', strong('Date Range'), 'slider
+          to modify the analysis date range.'),
           
           p(' Select the ', strong('Download'),' button to save a formatted PDF containing 
           facility information, summary statistics, the discharge history plot, 
@@ -273,10 +276,24 @@ shinyUI(
              uiOutput('pRWCxbox'))
   ),
 
-# second NEXT button
+# Downloads
   fluidRow(
+    column(2, offset = 9,
+           uiOutput('downloadBtn'))), # download parameter report
+
+br(),
+
+fluidRow(
+  column(2, offset = 9,
+         uiOutput('downloadALL'))), # download report for all parameters
+
+  br(),
+
+  fluidRow(  
     column(2, offset = 11,
-           uiOutput('downloadBtn'))),
+           uiOutput('sscsv'))), # download summary stats csv
+
+
 
 
 
