@@ -28,7 +28,7 @@ RWC <- function(value, p, dr, dates1, dates2){ # value = , p = parameter, dr = d
     # filter dmr by parameter and select value number
     db <- value %>% 
         filter(parameter_desc == p) %>% 
-        filter(between(monitoring_period_end_date, dates1, dates2)) %>%  # fitler to only be inside the date range slider
+        filter(between(monitoring_period_end_date, dates1, dates2)) %>%  # filter to only be inside the date range slider
         select(dmr_value_nmbr)
     
     df <- db$dmr_value_nmbr %>%  # sort
@@ -383,6 +383,11 @@ shinyServer(function(input, output) {
         
         # paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
         
+        
+        
+# Map over each parameter          
+#####        
+        
         output$tabs <- renderUI({ # render UI
             
             # useShinyjs()
@@ -390,7 +395,7 @@ shinyServer(function(input, output) {
             map(paramtab$nparam, # map over the list of parameters - parameters are designated with 'p'
                 function(p){
                     
-                  # reactive element for summary stats and RWC calcclations
+                  # reactive element for summary stats and RWC calculations
                     pstats <- reactive({
                       RWCvalues <- RWC(dmr_of(), p, pdr(), input$dateSlider[1], input$dateRange[2]) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
                       
@@ -721,29 +726,11 @@ shinyServer(function(input, output) {
                                                     },
                                                     outputArgs = list(label = paste('Download Parameter Report')))
                         
-                                                ), # end column
-
-
+                                                ) # end column
                                      ), # fluid  Row
-# ------------------------------------------------------------------------------
+
 
 # Summary Stats csv download ----------------------------------------------------------
-                                        br(),
-
-                          fluidRow(
-                            column(2, offset = 10,
-                                   output$downloadALL <- downloadHandler(
-                                     
-                                     filename = function() {
-                                       paste0(input$NPDESID, 
-                                              '_', input$radiob, '_', p,'_Summary_Stats.csv')
-                                     },
-                                     content = function(file) {
-                                       write.csv(pstats(), file, row.names = FALSE)
-                                     },
-                                     outputArgs = list(label = 'Download ALL Parameter Reports')))
-                          ),
- 
                                 br(),
 
                                   fluidRow(
@@ -759,18 +746,474 @@ shinyServer(function(input, output) {
                                                 outputArgs =  list(label = 'Download Summary Stats'))
                                            ) # end of column
                                     ) # end fluid row
-                      ) # end map
-                    
-                }) -> gap
+                    ) # end tab panel for each parameter
+
+                }) -> gap # end map
             do.call(what = tabsetPanel,
                     args = gap %>%
                         append(list(type = 'pills',
                                     id   = 'param_tabs')))
+            
         })
-        
 
     }) # end of tabset
+    
+    
+    
+# OLD Download All Parameters button ------------------------------------------------- OLD
+    # observeEvent(input$nextBtn2, {
+#       
+#       output$download_ap <- renderUI(
+#         actionButton('download_ap', 
+#         label = 'create table for all download')) 
+#     })
+#     
+#     
+#     # create an empty list to hold all parameter params
+#     observeEvent(input$download_ap, {
+#       
+#       paramtab <- reactiveValues(
+#         nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
+#       
+#       all_params_report <- tibble(
+#         
+#         sdat = character(),
+#         edat = character(),
+#         NPDES = character(),
+#         fac = character(),
+#         street = character(),
+#         citystate = character(),
+#         outfall = character(),
+#         param = character(),
+#         # unts = character(),
+#         nsam = numeric(),
+#         pmn = numeric(),
+#         pmean = numeric(),
+#         pmx = numeric(),
+#         RWC = numeric(),
+#         pcv = numeric(),
+#         pz95 = numeric(),
+#         pzx = numeric(),
+#         RPM = numeric(),
+#         DR = numeric(),
+#         WQSB = character(),
+#         WQSD = character()
+#         # pplot = ppl(),
+#         # dmrr = rdmr()
+#       )
+#       
+#       
+#       ap_output <- map_df(paramtab$nparam,
+#                           function(ap){
+#                             
+#                             # reactive element for summary stats and RWC calculations
+#                             pstats <- reactive({
+#                               RWCvalues <- RWC(dmr_of(), ap, 1, sdate, edate) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+#                               
+#                               data.frame(
+#                                 n = RWCvalues$n,
+#                                 min = RWCvalues$min,
+#                                 m = RWCvalues$m,
+#                                 max = RWCvalues$max,
+#                                 RWC = RWCvalues$RWC,
+#                                 cv = RWCvalues$cv,
+#                                 z95 = RWCvalues$z95,
+#                                 zx = RWCvalues$zx,
+#                                 RPM = RWCvalues$RPM,
+#                                 stringsAsFactors = FALSE)
+#                             })
+#                             
+#                             # dates of RP evaluation
+#                             evdates <- dmr_of() %>%
+#                               filter(parameter_desc == ap) %>%
+#                               select(monitoring_period_end_date) %>%
+#                               summarise(min = min(monitoring_period_end_date),
+#                                         max = max(monitoring_period_end_date))
+#                             
+#                             sdate <- evdates$min # earliest sample date for selected p
+#                             edate <- evdates$max # todays date
+#                             
+#                             sdate_char <- as.character(sdate)
+#                             edate_char <- as.character(edate)
+#                             
+#                             
+#                             # units - from DMR file
+#                             punits <- dmr_of() %>%
+#                               filter(parameter_desc == ap) %>%
+#                               select(dmr_unit_desc) %>%
+#                               unique()
+#                             
+#                             
+#                             # link DMR parameter desc p to dmr POLLUTANT_CODE
+#                             pc <- dmr_of()  %>%
+#                               filter(parameter_desc == ap) %>%
+#                               select(POLLUTANT_CODE_ECHO) %>%
+#                               unique() %>% 
+#                               pull() %>% 
+#                               as.numeric()
+#                             
+# 
+#                             
+#                             # WQS SB
+#                             if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
+#                               
+#                               wqsb <- wqs() %>% 
+#                                 filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('88', '87')) %>%  # 5088 for class SB waters and 5087 for surface waters
+#                                 select(CRITERION_VALUE) %>% 
+#                                 pull() %>% 
+#                                 str_remove(',') %>% 
+#                                 unique()
+#                               
+#                               # check to see if there is a value
+#                               if (length(wqsb) == 0){
+#                                 
+#                                 wqsb <- 'NA'
+#                                 
+#                                 # check for numeric or "See Equation"
+#                               } else if (!is.na(as.numeric(wqsb)) == TRUE) {
+#                                 wqsb <- wqsb %>% 
+#                                   as.character()
+#                               }
+#                               
+#                             }
+#                             else {
+#                               wqsb <- 'NA'
+#                               
+#                             }
+#                             
+#                             
+#                             #WQS SD
+#                             if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
+#                               
+#                               wqsd <-  wqs() %>% 
+#                                 filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('89', '87', '92')) %>%  # 5089 for class sd waters, 5087 for surface waters, and 5092 for SD/drinking water
+#                                 select(CRITERION_VALUE) %>% 
+#                                 pull() %>% 
+#                                 unique()
+#                               
+#                               # check for numeric or "See Equation"
+#                               if (!is.na(as.numeric(wqsd)) == TRUE) {
+#                                 wqsd <- wqsd %>% 
+#                                   as.character()
+#                               }
+#                               
+#                             }
+#                             else {
+#                               wqsd <- 'NA'
+#                             }
+# 
+#                             
+#                             
+# # ----------------------------------------------------------------------------------
+#                             all_params_report <- all_params_report %>%
+#                               add_row(
+#                                 
+#                                       sdat = sdate_char,
+#                                       edat = edate_char,
+#                                       NPDES = input$NPDESID,
+#                                       fac = dfinfo2()$CWPName,
+#                                       street = dfinfo2()$CWPStreet,
+#                                       citystate = paste(dfinfo2()$CWPCity, 
+#                                                         dfinfo2()$CWPState,
+#                                                         sep = ', '),
+#                                       outfall = input$radiob,
+#                                       param = ap,
+#                                       # unts = punits,
+#                                       nsam = pstats()$n,
+#                                       pmn = pstats()$min,
+#                                       pmean = pstats()$m,
+#                                       pmx = pstats()$max,
+#                                       RWC = pstats()$RWC,
+#                                       pcv = pstats()$cv,
+#                                       pz95 = pstats()$z95,
+#                                       pzx = pstats()$zx,
+#                                       RPM = pstats()$RPM,
+#                                       DR = 1,
+#                                       WQSB = wqsb,
+#                                       WQSD = wqsd)
+#                                       # pplot = ppl(),
+#                                       # dmrr = rdmr())
+#                           }) 
+# 
+# 
+#       output$ap_report <- DT::renderDataTable(ap_output)
+      
+      
+    #})
+    
+      
+    
+# Rmd Report download ALL ----------------------------------------------------------
+    observeEvent(input$nextBtn2, {
+      
+      
+      output$download_ap <- renderUI(
+        actionButton('download_ap', 
+                     label = 'create table for all download')) 
+    })
+    
+    
+    # create an empty list to hold all parameter params
+    observeEvent(input$download_ap, {
+      
+      paramtab <- reactiveValues(
+        nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
+      
+      all_params_report <- tibble(
+        
+        sdat = character(),
+        edat = character(),
+        NPDES = character(),
+        fac = character(),
+        street = character(),
+        citystate = character(),
+        outfall = character(),
+        param = character(),
+        # unts = character(),
+        nsam = numeric(),
+        pmn = numeric(),
+        pmean = numeric(),
+        pmx = numeric(),
+        RWC = numeric(),
+        pcv = numeric(),
+        pz95 = numeric(),
+        pzx = numeric(),
+        RPM = numeric(),
+        DR = numeric(),
+        WQSB = character(),
+        WQSD = character()
+        # pplot = ppl(),
+        # dmrr = rdmr()
+      )
+      
+      
+      ap_output <- map_df(paramtab$nparam,
+                          function(ap){
+                            
+                            # reactive element for summary stats and RWC calculations
+                            pstats <- reactive({
+                              RWCvalues <- RWC(dmr_of(), ap, 1, sdate, edate) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+                              
+                              data.frame(
+                                n = RWCvalues$n,
+                                min = RWCvalues$min,
+                                m = RWCvalues$m,
+                                max = RWCvalues$max,
+                                RWC = RWCvalues$RWC,
+                                cv = RWCvalues$cv,
+                                z95 = RWCvalues$z95,
+                                zx = RWCvalues$zx,
+                                RPM = RWCvalues$RPM,
+                                stringsAsFactors = FALSE)
+                            })
+                            
+                            # dates of RP evaluation
+                            evdates <- dmr_of() %>%
+                              filter(parameter_desc == ap) %>%
+                              select(monitoring_period_end_date) %>%
+                              summarise(min = min(monitoring_period_end_date),
+                                        max = max(monitoring_period_end_date))
+                            
+                            sdate <- evdates$min # earliest sample date for selected p
+                            edate <- evdates$max # todays date
+                            
+                            sdate_char <- as.character(sdate)
+                            edate_char <- as.character(edate)
+                            
+                            
+                            # units - from DMR file
+                            punits <- dmr_of() %>%
+                              filter(parameter_desc == ap) %>%
+                              select(dmr_unit_desc) %>%
+                              unique()
+                            
+                            
+                            # link DMR parameter desc p to dmr POLLUTANT_CODE
+                            pc <- dmr_of()  %>%
+                              filter(parameter_desc == ap) %>%
+                              select(POLLUTANT_CODE_ECHO) %>%
+                              unique() %>% 
+                              pull() %>% 
+                              as.numeric()
+                            
+                            
+                            
+                            # WQS SB
+                            if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
+                              
+                              wqsb <- wqs() %>% 
+                                filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('88', '87')) %>%  # 5088 for class SB waters and 5087 for surface waters
+                                select(CRITERION_VALUE) %>% 
+                                pull() %>% 
+                                str_remove(',') %>% 
+                                unique()
+                              
+                              # check to see if there is a value
+                              if (length(wqsb) == 0){
+                                
+                                wqsb <- 'NA'
+                                
+                                # check for numeric or "See Equation"
+                              } else if (!is.na(as.numeric(wqsb)) == TRUE) {
+                                wqsb <- wqsb %>% 
+                                  as.character()
+                              }
+                              
+                            }
+                            else {
+                              wqsb <- 'NA'
+                              
+                            }
+                            
+                            
+                            #WQS SD
+                            if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
+                              
+                              wqsd <-  wqs() %>% 
+                                filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('89', '87', '92')) %>%  # 5089 for class sd waters, 5087 for surface waters, and 5092 for SD/drinking water
+                                select(CRITERION_VALUE) %>% 
+                                pull() %>% 
+                                unique()
+                              
+                              # check for numeric or "See Equation"
+                              if (!is.na(as.numeric(wqsd)) == TRUE) {
+                                wqsd <- wqsd %>% 
+                                  as.character()
+                              }
+                              
+                            }
+                            else {
+                              wqsd <- 'NA'
+                            }
+                            
+                            
+                            
+                            # ----------------------------------------------------------------------------------
+                            all_params_report <- all_params_report %>%
+                              add_row(
+                                
+                                sdat = sdate_char,
+                                edat = edate_char,
+                                NPDES = input$NPDESID,
+                                fac = dfinfo2()$CWPName,
+                                street = dfinfo2()$CWPStreet,
+                                citystate = paste(dfinfo2()$CWPCity, 
+                                                  dfinfo2()$CWPState,
+                                                  sep = ', '),
+                                outfall = input$radiob,
+                                param = ap,
+                                # unts = punits,
+                                nsam = pstats()$n,
+                                pmn = pstats()$min,
+                                pmean = pstats()$m,
+                                pmx = pstats()$max,
+                                RWC = pstats()$RWC,
+                                pcv = pstats()$cv,
+                                pz95 = pstats()$z95,
+                                pzx = pstats()$zx,
+                                RPM = pstats()$RPM,
+                                DR = 1,
+                                WQSB = wqsb,
+                                WQSD = wqsd)
+                            # pplot = ppl(),
+                            # dmrr = rdmr())
+                            
+                          }) # end map
+      
+      
+      output$ap_report <- DT::renderDataTable(ap_output)
+      
+      
+      
+      
+    output$allparamsbtn <- renderUI({
+
+    fluidRow(
+      column(2, offset = 10,
+
+             output$downloadALL <- downloadHandler(
+
+
+               filename = function() {
+                 paste0(input$NPDESID,
+                        '_', input$radiob, '_', 'ALL Parameter RP Report.zip')
+               },
+
+               content = function(file) {
+
+                 fs <- c()
+
+                 # map over the list of parameters - parameters are designated with 'p'
+                 for (i in 1:length(paramtab$nparam)) {
+
+                   # set up parameters
+                   params <- list(sdat = ap_output$sdat[i],
+                                  edat = ap_output$edat[i],
+                                  NPDES = ap_output$NPDES[i],
+                                  fac = ap_output$fac[i],
+                                  street = ap_output$street[i],
+                                  citystate = ap_output$citystate[i],
+                                  outfall = ap_output$outfall[i],
+
+                                  param = ap_output$param[i],
+                                  # unts = ap_output$unts[i],
+                                  nsam = ap_output$nsam[i],
+                                  pmn = ap_output$pmn[i],
+                                  pmean = ap_output$pmean[i],
+                                  pmx = ap_output$pmx[i],
+                                  RWC = ap_output$RWC[i],
+                                  pcv = ap_output$pcv[i],
+                                  pz95 = ap_output$pz95[i],
+                                  pzx = ap_output$pzx[i],
+                                  RPM = ap_output$RPM[i],
+                                  DR = ap_output$DR[i],
+                                  WQSB = ap_output$WQSB[i],
+                                  WQSD = ap_output$WQSD[i]
+                                  # pplot = ap_output$pplot[i],
+                                  # dmrr = ap_output$dmrr[i]
+                                  )
+
+                   path <- paste0(input$NPDESID,
+                                  '_', input$radiob, '_', ap_output$param[i],' RP Report.pdf')
+
+                   rmarkdown::render('Report.Rmd',
+                                     params = params,
+                                     envir = new.env(parent = globalenv()),
+                                     rmarkdown::pdf_document(),
+                                     output_file = path)
+
+                   fs <- c(fs, path)
+                 } # end map
+
+                 zip(file, fs)
+
+               }, # end content
+
+               contentType = 'application/zip',
+
+               outputArgs = list(label = 'Download ALL Parameter Reports'))
+
+
+
+             # output$downloadALL <- downloadHandler(
+             #   filename = function() {
+             #     paste0(input$NPDESID,
+             #            '_', input$radiob, '_', p,'_Summary_Stats.csv')
+             #   },
+             #   content = function(file) {
+             #     write.csv(pstats(), file, row.names = FALSE)
+             #   },
+             #   outputArgs = list(label = 'Download ALL Parameter Reports'))
+
+
+
+      ) # end column
+    ) # fluid  Row
+    }) # end of render UI
+  }) # end observe event
 
 })
 
 
+## when I'm in the first map function, I cannot export a report for each parameter because I'm in the function.
+## I need to export a table with all the markdown params for each parameter. Then create a markdown using those params.

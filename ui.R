@@ -200,7 +200,7 @@ shinyUI(
 
     column(4, offset = 1,
            dateRangeInput('dateRange', label = h3('Dates for analysis'),
-                          start = today() %m-% years(10), end = today())
+                          start = today() %m-% years(2), end = today())
            )),
 	
 # First NEXT button  
@@ -285,13 +285,28 @@ br(),
 
 fluidRow(
   column(2, offset = 9,
-         uiOutput('downloadALL'))), # download report for all parameters
+         uiOutput('download_ap'))), # download report for all parameters
 
   br(),
 
   fluidRow(  
     column(2, offset = 11,
            uiOutput('sscsv'))), # download summary stats csv
+
+br(),
+br(),
+
+br(),
+
+fluidRow(
+  column(2, offset = 9,
+         uiOutput('allparamsbtn'))), # download report for all parameters
+
+br(),
+
+mainPanel(
+  DT::dataTableOutput('ap_report')
+),
 
 
 
