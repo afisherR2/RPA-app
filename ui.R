@@ -98,9 +98,6 @@ shinyUI(
 
 	"),
 #####
-# 	   
-	
-# what about adding a map of the facility?
 
 # Insert RShiny App here
 	hr(),
@@ -189,18 +186,10 @@ shinyUI(
 	    column(4, offset = 1,
 	           textInput('NPDESID', label = h3('NPDES ID Input'),
 	                     value = 'PR0024163')),
-	    
-	  
-	    # column(4, offest = 1,
-	    #        fileInput('WQSinput', label = h3('WQS File Upload'),
-	    #                  multiple = FALSE,
-	    #                  accept = c('.xlsx'),
-	    #                  placeholder = 'PR2022Standards-RPTool.xlsx')
-	    #        )),
 
     column(4, offset = 1,
            dateRangeInput('dateRange', label = h3('Dates for analysis'),
-                          start = today() %m-% years(2), end = today())
+                          start = today() %m-% years(5), end = today())
            )),
 	
 # First NEXT button  
@@ -225,7 +214,6 @@ shinyUI(
 	           h1(textOutput('facility'))),
 	    
 	    column(5,
-	           # h3(textOutput('dfnpdesid')),
 	           h2(textOutput('street')),
 	           h2(textOutput('citystate')))),
 	
@@ -260,9 +248,6 @@ shinyUI(
 
   fluidRow(
       
-      # column(3, offset = 1,
-      #        uiOutput('pdr')),
-      
       column(2,
              uiOutput('pMaxbox')),
       
@@ -281,36 +266,15 @@ shinyUI(
     column(2, offset = 9,
            uiOutput('downloadBtn'))), # download parameter report
 
-br(),
-
-fluidRow(
-  column(2, offset = 9,
-         uiOutput('download_ap'))), # download report for all parameters
-
   br(),
 
   fluidRow(  
     column(2, offset = 11,
            uiOutput('sscsv'))), # download summary stats csv
-
-br(),
-br(),
-
-br(),
-
-fluidRow(
-  column(2, offset = 9,
-         uiOutput('allparamsbtn'))), # download report for all parameters
-
-br(),
-
-mainPanel(
-  DT::dataTableOutput('ap_report')
-),
-
-
-
-
+  
+  fluidRow(
+    column(2, offset = 10,
+           uiOutput('download_ap'))), # download ALL parameter report
 
   br(),
   br(),

@@ -17,7 +17,10 @@ library(xml2)
 library(httr)
 library(stringr)
 library(tidyr)
+library(openxlsx)
 
+
+# NEED to download CST from URL and work on the server
 
 # receiving water concentration function ---------------------------------------
 RWC <- function(value, p, dr, dates1, dates2){ # value = , p = parameter, dr = dilution ratio, dates1 = dateslider input 1, dates2 = dateslider input 2
@@ -29,6 +32,7 @@ RWC <- function(value, p, dr, dates1, dates2){ # value = , p = parameter, dr = d
     db <- value %>% 
         filter(parameter_desc == p) %>% 
         filter(between(monitoring_period_end_date, dates1, dates2)) %>%  # filter to only be inside the date range slider
+        # filter(monitoring_period_end_date >= dates1 & monitoring_period_end_date <= dates2) %>%
         select(dmr_value_nmbr)
     
     df <- db$dmr_value_nmbr %>%  # sort
@@ -96,9 +100,86 @@ RWC <- function(value, p, dr, dates1, dates2){ # value = , p = parameter, dr = d
 }
 
 
+# download all parameters report module ----------------------------------------
+downloadObjUI <- function(id) {
+  ns <- NS(id)
+  
+  downloadButton(ns('ap_download'), label = 'Download All Parameter Reports')
+}
+
+
+# create download object
+downloadObj <- function(input, output, session, npdesID, npdesRadio, data, ap_output) {
+  
+  # download handler
+  output$ap_download <- downloadHandler(
+    
+    
+    filename = function() {
+      paste0(npdesID,
+             '_', npdesRadio, '_', 'ALL Parameter RP Report.zip')
+    },
+    
+    content = function(file) {
+      
+      fs <- c()
+      
+      # set reactive value for parameter
+      paramtab <- reactiveValues(
+        nparam = sort(unique(data$parameter_desc))) # list of parameters
+      
+      # loop over the list of effluent parameters and assign report "parameters"
+      for (i in 1:length(paramtab$nparam)) {
+        
+        # set up parameters
+        params <- list(sdat = ap_output$sdat[i],
+                       edat = ap_output$edat[i],
+                       NPDES = ap_output$NPDES[i],
+                       fac = ap_output$fac[i],
+                       street = ap_output$street[i],
+                       citystate = ap_output$citystate[i],
+                       outfall = ap_output$outfall[i],
+                       
+                       param = ap_output$param[i],
+                       # unts = ap_output$unts[i],
+                       nsam = ap_output$nsam[i],
+                       pmn = ap_output$pmn[i],
+                       pmean = ap_output$pmean[i],
+                       pmx = ap_output$pmx[i],
+                       RWC = ap_output$RWC[i],
+                       pcv = ap_output$pcv[i],
+                       pz95 = ap_output$pz95[i],
+                       pzx = ap_output$pzx[i],
+                       RPM = ap_output$RPM[i],
+                       DR = ap_output$DR[i],
+                       WQSB = ap_output$WQSB[i],
+                       WQSD = ap_output$WQSD[i]
+        )
+        
+        path <- paste0(npdesID,
+                       '_', npdesRadio, '_', ap_output$param[i],' RP Report.pdf')
+        
+        rmarkdown::render('AP_Report.Rmd',
+                          params = params,
+                          envir = new.env(parent = globalenv()),
+                          rmarkdown::pdf_document(),
+                          output_file = path)
+        
+        fs <- c(fs, path)
+      } # end map
+      
+      zip(file, fs)
+      
+    }, # end content
+    
+    contentType = 'application/zip'
+
+  )
+}
 
 #-------------------------------------------------------------------------------
 # Define server logic 
+
 shinyServer(function(input, output) {
 
     
@@ -154,16 +235,10 @@ shinyServer(function(input, output) {
         echoGetEffluent(p_id = input$NPDESID, # pull DMR
                         start_date = format(input$dateRange[1], '%m/%d/%Y'),
                         end_date = format(input$dateRange[2], '%m/%d/%Y'))
-            # suppressWarnings() # suppress parsing warning
+
         
     }, ignoreNULL = FALSE)
     
-# read WQS file ----------------------------------------------------------------
-    # WQSdf <- eventReactive(input$nextBtn, {
-    #     req(input$WQSinput, dfinfo2()) # BREAK for WQSinput and dfinfo2
-    #     WQSdf <- read_xlsx(input$WQSinput$datapath, sheet = 'WQS')
-    #     return(WQSdf)
-    # })
     
 # Select outfall to use --------------------------------------------------------
     observeEvent(input$nextBtn,{
@@ -193,13 +268,19 @@ shinyServer(function(input, output) {
             
             req(dfinfo2())  # BREAK for WQSinput
             
-            # download criteria form EPA OST Criteria Search Tool
-            GET('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx', 
-                write_disk(tf <- tempfile(fileext = ".xlsx")))
+            # # download criteria form EPA OST Criteria Search Tool
+            # GET('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx',
+            #     write_disk(tf <- tempfile(fileext = '.xlsx')))
 
-            wqsraw <- read_excel(tf,
+            wqsraw <- read_excel('www/criteria-search-tool-data.xlsx',
                                  skip = 207) # skip the first 200 lines b/c the flat file is formatted weird
+            
+            # wqsraw <- read.xlsx('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx',
+            #                      startRow = 208)
+
         })
+        
+    # need to write CST to someplace on the posit connect server    
         
 # link to standards
         observeEvent(input$nextBtn, {
@@ -397,9 +478,10 @@ shinyServer(function(input, output) {
                     
                   # reactive element for summary stats and RWC calculations
                     pstats <- reactive({
-                      RWCvalues <- RWC(dmr_of(), p, pdr(), input$dateSlider[1], input$dateRange[2]) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+                      RWCvalues <- RWC(dmr_of(), p, pdr(), input$dateSlider[1], input$dateSlider[2]) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
+                      # RWCvalues <- RWC(dmr_of(), p, pdr(), sdate, edate)
                       
-                      data.frame(
+                      tibble(
                         n = RWCvalues$n,
                         min = RWCvalues$min,
                         m = RWCvalues$m,
@@ -425,8 +507,8 @@ shinyServer(function(input, output) {
                       summarise(min = min(monitoring_period_end_date),
                                 max = max(monitoring_period_end_date))
 
-                    sdate <- evdates$min # earliest sample date for selected p
-                    edate <- evdates$max # todays date
+                    sdate <- evdates$min # earliest sample date up to 5 years
+                    edate <- evdates$max # most recent sample date
 
                     
                     # units - from DMR file
@@ -522,11 +604,9 @@ shinyServer(function(input, output) {
                     pl <- dmr_of() %>%
                         filter(parameter_desc == p) %>%
                         ggplot(., aes(x = monitoring_period_end_date, y = dmr_value_nmbr,
-                                      text = paste0('Monitoring Period End Date: ', monitoring_period_end_date,
-                                                    '<br>Concentration: ', dmr_value_nmbr, ' ', punits),
                                       group = p)) +
                         geom_line(color = '#01665e') +
-                        geom_area(position = position_dodge(width = 1), fill = '#c7eae5', alpha = .5) +
+                        # geom_area(position = position_dodge(width = 1), fill = '#c7eae5', alpha = .5) +
                         xlab('Date') +
                         ylab(paste(p, '(', punits, ')')) +
                         theme_light(base_size = 15) +
@@ -645,6 +725,7 @@ shinyServer(function(input, output) {
 
                                              width = 4), # width of the panel
                                              
+                                            
                                          # modify time series plot by checkbox input
                                          mainPanel(
                                              
@@ -675,7 +756,7 @@ shinyServer(function(input, output) {
 
                                              } else { pl + theme(text = element_text(family = 'Merriweather')) }
                                                  
-                                             ggplotly(pl, tooltip = NA)     
+                                             ggplotly(pl, tooltip = NA)
                                              # ggplotly(pl, tooltip = c('text'))
                                              })
 
@@ -686,8 +767,10 @@ shinyServer(function(input, output) {
                                          column(2, offset = 10, # download button placement
 
                                                 output$parport <- downloadHandler(
+                                                  
                                                     filename = paste0(input$NPDESID, 
                                                                       '_', input$radiob, '_', p,' RP Report.pdf'),
+                                                    
                                                     content = function(file){ # copy report to temp directory
                                                         tempReport <- file.path(tempdir(), 'Report.Rmd')
                                                         file.copy('Report.Rmd', tempReport, overwrite = TRUE)
@@ -736,13 +819,14 @@ shinyServer(function(input, output) {
                                   fluidRow(
                                     column(2, offset = 10,
                                               output$sscsv <- downloadHandler(
-                                                filename = function() {
-                                                  paste0(input$NPDESID, 
-                                                         '_', input$radiob, '_', p,'_Summary_Stats.csv')
-                                                },
+                                                
+                                                filename = paste0(input$NPDESID, 
+                                                         '_', input$radiob, '_', p,'_Summary_Stats.csv'),
+                                                
                                                 content = function(file) {
                                                   write.csv(pstats(), file, row.names = FALSE)
                                                 },
+                                                
                                                 outputArgs =  list(label = 'Download Summary Stats'))
                                            ) # end of column
                                     ) # end fluid row
@@ -758,207 +842,24 @@ shinyServer(function(input, output) {
 
     }) # end of tabset
     
-    
-    
-# OLD Download All Parameters button ------------------------------------------------- OLD
-    # observeEvent(input$nextBtn2, {
-#       
-#       output$download_ap <- renderUI(
-#         actionButton('download_ap', 
-#         label = 'create table for all download')) 
-#     })
-#     
-#     
-#     # create an empty list to hold all parameter params
-#     observeEvent(input$download_ap, {
-#       
-#       paramtab <- reactiveValues(
-#         nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
-#       
-#       all_params_report <- tibble(
-#         
-#         sdat = character(),
-#         edat = character(),
-#         NPDES = character(),
-#         fac = character(),
-#         street = character(),
-#         citystate = character(),
-#         outfall = character(),
-#         param = character(),
-#         # unts = character(),
-#         nsam = numeric(),
-#         pmn = numeric(),
-#         pmean = numeric(),
-#         pmx = numeric(),
-#         RWC = numeric(),
-#         pcv = numeric(),
-#         pz95 = numeric(),
-#         pzx = numeric(),
-#         RPM = numeric(),
-#         DR = numeric(),
-#         WQSB = character(),
-#         WQSD = character()
-#         # pplot = ppl(),
-#         # dmrr = rdmr()
-#       )
-#       
-#       
-#       ap_output <- map_df(paramtab$nparam,
-#                           function(ap){
-#                             
-#                             # reactive element for summary stats and RWC calculations
-#                             pstats <- reactive({
-#                               RWCvalues <- RWC(dmr_of(), ap, 1, sdate, edate) # list of n, mean, max, CV, Z95, Zx, RPM, and RWC
-#                               
-#                               data.frame(
-#                                 n = RWCvalues$n,
-#                                 min = RWCvalues$min,
-#                                 m = RWCvalues$m,
-#                                 max = RWCvalues$max,
-#                                 RWC = RWCvalues$RWC,
-#                                 cv = RWCvalues$cv,
-#                                 z95 = RWCvalues$z95,
-#                                 zx = RWCvalues$zx,
-#                                 RPM = RWCvalues$RPM,
-#                                 stringsAsFactors = FALSE)
-#                             })
-#                             
-#                             # dates of RP evaluation
-#                             evdates <- dmr_of() %>%
-#                               filter(parameter_desc == ap) %>%
-#                               select(monitoring_period_end_date) %>%
-#                               summarise(min = min(monitoring_period_end_date),
-#                                         max = max(monitoring_period_end_date))
-#                             
-#                             sdate <- evdates$min # earliest sample date for selected p
-#                             edate <- evdates$max # todays date
-#                             
-#                             sdate_char <- as.character(sdate)
-#                             edate_char <- as.character(edate)
-#                             
-#                             
-#                             # units - from DMR file
-#                             punits <- dmr_of() %>%
-#                               filter(parameter_desc == ap) %>%
-#                               select(dmr_unit_desc) %>%
-#                               unique()
-#                             
-#                             
-#                             # link DMR parameter desc p to dmr POLLUTANT_CODE
-#                             pc <- dmr_of()  %>%
-#                               filter(parameter_desc == ap) %>%
-#                               select(POLLUTANT_CODE_ECHO) %>%
-#                               unique() %>% 
-#                               pull() %>% 
-#                               as.numeric()
-#                             
-# 
-#                             
-#                             # WQS SB
-#                             if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
-#                               
-#                               wqsb <- wqs() %>% 
-#                                 filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('88', '87')) %>%  # 5088 for class SB waters and 5087 for surface waters
-#                                 select(CRITERION_VALUE) %>% 
-#                                 pull() %>% 
-#                                 str_remove(',') %>% 
-#                                 unique()
-#                               
-#                               # check to see if there is a value
-#                               if (length(wqsb) == 0){
-#                                 
-#                                 wqsb <- 'NA'
-#                                 
-#                                 # check for numeric or "See Equation"
-#                               } else if (!is.na(as.numeric(wqsb)) == TRUE) {
-#                                 wqsb <- wqsb %>% 
-#                                   as.character()
-#                               }
-#                               
-#                             }
-#                             else {
-#                               wqsb <- 'NA'
-#                               
-#                             }
-#                             
-#                             
-#                             #WQS SD
-#                             if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
-#                               
-#                               wqsd <-  wqs() %>% 
-#                                 filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('89', '87', '92')) %>%  # 5089 for class sd waters, 5087 for surface waters, and 5092 for SD/drinking water
-#                                 select(CRITERION_VALUE) %>% 
-#                                 pull() %>% 
-#                                 unique()
-#                               
-#                               # check for numeric or "See Equation"
-#                               if (!is.na(as.numeric(wqsd)) == TRUE) {
-#                                 wqsd <- wqsd %>% 
-#                                   as.character()
-#                               }
-#                               
-#                             }
-#                             else {
-#                               wqsd <- 'NA'
-#                             }
-# 
-#                             
-#                             
-# # ----------------------------------------------------------------------------------
-#                             all_params_report <- all_params_report %>%
-#                               add_row(
-#                                 
-#                                       sdat = sdate_char,
-#                                       edat = edate_char,
-#                                       NPDES = input$NPDESID,
-#                                       fac = dfinfo2()$CWPName,
-#                                       street = dfinfo2()$CWPStreet,
-#                                       citystate = paste(dfinfo2()$CWPCity, 
-#                                                         dfinfo2()$CWPState,
-#                                                         sep = ', '),
-#                                       outfall = input$radiob,
-#                                       param = ap,
-#                                       # unts = punits,
-#                                       nsam = pstats()$n,
-#                                       pmn = pstats()$min,
-#                                       pmean = pstats()$m,
-#                                       pmx = pstats()$max,
-#                                       RWC = pstats()$RWC,
-#                                       pcv = pstats()$cv,
-#                                       pz95 = pstats()$z95,
-#                                       pzx = pstats()$zx,
-#                                       RPM = pstats()$RPM,
-#                                       DR = 1,
-#                                       WQSB = wqsb,
-#                                       WQSD = wqsd)
-#                                       # pplot = ppl(),
-#                                       # dmrr = rdmr())
-#                           }) 
-# 
-# 
-#       output$ap_report <- DT::renderDataTable(ap_output)
-      
-      
-    #})
-    
       
     
 # Rmd Report download ALL ----------------------------------------------------------
     observeEvent(input$nextBtn2, {
       
-      
       output$download_ap <- renderUI(
-        actionButton('download_ap', 
-                     label = 'create table for all download')) 
-    })
+        downloadObjUI(id = 'downloadap')
+        ) 
     
-    
-    # create an empty list to hold all parameter params
-    observeEvent(input$download_ap, {
+# All parameters report download ---------------------------------------------------
       
+
+   # set reactive value for parameter
       paramtab <- reactiveValues(
         nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
       
+      
+      # create an empty list to hold all parameter params
       all_params_report <- tibble(
         
         sdat = character(),
@@ -982,8 +883,6 @@ shinyServer(function(input, output) {
         DR = numeric(),
         WQSB = character(),
         WQSD = character()
-        # pplot = ppl(),
-        # dmrr = rdmr()
       )
       
       
@@ -1088,7 +987,7 @@ shinyServer(function(input, output) {
                             
                             
                             
-                            # ----------------------------------------------------------------------------------
+                            # --------------------------------------------------
                             all_params_report <- all_params_report %>%
                               add_row(
                                 
@@ -1121,99 +1020,14 @@ shinyServer(function(input, output) {
                           }) # end map
       
       
-      output$ap_report <- DT::renderDataTable(ap_output)
+# call all parameter report module - and set function inputs
+      callModule(downloadObj, id = 'downloadap', 
+                 npdesID = input$NPDESID, 
+                 npdesRadio = input$radiob,
+                 data = dmr_of(),
+                 ap_output = ap_output)
       
-      
-      
-      
-    output$allparamsbtn <- renderUI({
-
-    fluidRow(
-      column(2, offset = 10,
-
-             output$downloadALL <- downloadHandler(
-
-
-               filename = function() {
-                 paste0(input$NPDESID,
-                        '_', input$radiob, '_', 'ALL Parameter RP Report.zip')
-               },
-
-               content = function(file) {
-
-                 fs <- c()
-
-                 # map over the list of parameters - parameters are designated with 'p'
-                 for (i in 1:length(paramtab$nparam)) {
-
-                   # set up parameters
-                   params <- list(sdat = ap_output$sdat[i],
-                                  edat = ap_output$edat[i],
-                                  NPDES = ap_output$NPDES[i],
-                                  fac = ap_output$fac[i],
-                                  street = ap_output$street[i],
-                                  citystate = ap_output$citystate[i],
-                                  outfall = ap_output$outfall[i],
-
-                                  param = ap_output$param[i],
-                                  # unts = ap_output$unts[i],
-                                  nsam = ap_output$nsam[i],
-                                  pmn = ap_output$pmn[i],
-                                  pmean = ap_output$pmean[i],
-                                  pmx = ap_output$pmx[i],
-                                  RWC = ap_output$RWC[i],
-                                  pcv = ap_output$pcv[i],
-                                  pz95 = ap_output$pz95[i],
-                                  pzx = ap_output$pzx[i],
-                                  RPM = ap_output$RPM[i],
-                                  DR = ap_output$DR[i],
-                                  WQSB = ap_output$WQSB[i],
-                                  WQSD = ap_output$WQSD[i]
-                                  # pplot = ap_output$pplot[i],
-                                  # dmrr = ap_output$dmrr[i]
-                                  )
-
-                   path <- paste0(input$NPDESID,
-                                  '_', input$radiob, '_', ap_output$param[i],' RP Report.pdf')
-
-                   rmarkdown::render('Report.Rmd',
-                                     params = params,
-                                     envir = new.env(parent = globalenv()),
-                                     rmarkdown::pdf_document(),
-                                     output_file = path)
-
-                   fs <- c(fs, path)
-                 } # end map
-
-                 zip(file, fs)
-
-               }, # end content
-
-               contentType = 'application/zip',
-
-               outputArgs = list(label = 'Download ALL Parameter Reports'))
-
-
-
-             # output$downloadALL <- downloadHandler(
-             #   filename = function() {
-             #     paste0(input$NPDESID,
-             #            '_', input$radiob, '_', p,'_Summary_Stats.csv')
-             #   },
-             #   content = function(file) {
-             #     write.csv(pstats(), file, row.names = FALSE)
-             #   },
-             #   outputArgs = list(label = 'Download ALL Parameter Reports'))
-
-
-
-      ) # end column
-    ) # fluid  Row
-    }) # end of render UI
   }) # end observe event
 
 })
 
-
-## when I'm in the first map function, I cannot export a report for each parameter because I'm in the function.
-## I need to export a table with all the markdown params for each parameter. Then create a markdown using those params.
