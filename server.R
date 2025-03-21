@@ -324,11 +324,9 @@ shinyServer(function(input, output) {
     
 # download ECHO REF parameter file to link DMR parameter codes to xwalk pollutant codes
     
-    echo_ref_p <- eventReactive(input$nextBtn2, { 
-      GET('https://echo.epa.gov/system/files/REF_Parameter.csv', # add note about dev. guide 
-          write_disk(tf <- tempfile(fileext = ".csv")))
-      
-      echo_ref_p <- read.csv(tf)
+    echo_ref_p <- eventReactive(input$nextBtn2, { # if ECHO file changes, re-upload to git & change url below
+      echo_ref_p_url <- "https://raw.githubusercontent.com/afisherR2/RPA-app/refs/heads/master/www/REF_Parameter.csv?token=GHSAT0AAAAAAC7WHB2XLYTVRSAZKF5GZFFYZ65R5IQ"
+      echo_ref_p <- read_csv(echo_ref_p_url)
       })
     
     
