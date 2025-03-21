@@ -2,3 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
+rsconnect/
+DESCRIPTION
+test.Rmd
+www/PR_standards_echo_xwalk.csv
+www/VI_standards_echo_xwalk.csv
+www/RPTOOL_WQS_Template.xlsx
+www/criteria-search-tool-data.xlsx
