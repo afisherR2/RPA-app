@@ -18,6 +18,7 @@ library(httr)
 library(stringr)
 library(tidyr)
 library(openxlsx)
+# 🔻
 
 
 # NEED to download CST from URL and work on the server
@@ -199,7 +200,8 @@ shinyServer(function(input, output) {
         
         echoWaterGetFacilityInfo(p_pid = input$NPDESID,
                                  output = 'df',
-                                 qcolumns = '1,3,4,5,7')
+                                 qcolumns = '1,3,4,5,7') # these are 
+
 
     }, ignoreNULL = FALSE)
     
@@ -274,6 +276,7 @@ shinyServer(function(input, output) {
 
             wqsraw <- read_excel('www/criteria-search-tool-data.xlsx',
                                  skip = 207) # skip the first 200 lines b/c the flat file is formatted weird
+            
             
             # wqsraw <- read.xlsx('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx',
             #                      startRow = 208)
@@ -350,8 +353,10 @@ shinyServer(function(input, output) {
                        value_type_code,
                        value_type_desc, 
                        monitoring_period_end_date,
-                       dmr_value_nmbr, 
-                       dmr_unit_desc, 
+                       dmr_value_nmbr,
+                       dmr_unit_desc,
+                       # dmr_value_standard_units, # value converted to standard units
+                       # standard_unit_desc, # standardized units
                        limit_value_nmbr, 
                        limit_unit_desc,
                        nodi_code) %>%
@@ -397,15 +402,15 @@ shinyServer(function(input, output) {
         set_names(slice(.,1)) %>% 
         slice(-1) %>% 
         
-        filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% 
+        filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% # filter for PR or VI
         
         select(c(ENTITY_NAME, STD_POLL_ID, STD_POLLUTANT_NAME, CRITERION_VALUE, UNIT_NAME,
                  CRITERIATYPEAQUAHUMHLTH, CRITERIATYPEFRESHSALTWATER,
                  USE_CLASS_NAME_LOCATION_ETC_ID, USE_CLASS_NAME_LOCATION_ETC, EFFECTIVE_DATE, LAST_ENTRY_IN_DB)) %>% 
         
         # remove '.0' from STD_POLL_ID and USE_CLASS_NAME_LOCATION_ETC_ID
-        mutate(STD_POLL_ID = gsub('.0', '', STD_POLL_ID)) %>% 
-        mutate(USE_CLASS_NAME_LOCATION_ETC_ID = gsub('.0', '', USE_CLASS_NAME_LOCATION_ETC_ID)) %>% 
+        mutate(STD_POLL_ID = str_sub(STD_POLL_ID, end = -3)) %>% 
+        mutate(USE_CLASS_NAME_LOCATION_ETC_ID = str_sub(USE_CLASS_NAME_LOCATION_ETC_ID, end = -3)) %>% 
         
         # cross walk ECHO parameter names with CST parameter names
         mutate(POLLUTANT_CODE_ECHO = across(STD_POLL_ID, ~ with(xwalk(), POLLUTANT_CODE[match(.x, STD_POLL_ID_CST)]),
@@ -531,7 +536,7 @@ shinyServer(function(input, output) {
                     if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
                       
                         wsbunits <- wqs() %>% 
-                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('88', '87')) %>%  #5088 for class sb waters
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5088', '5087')) %>%  #5088 for class sb waters
                           select(UNIT_NAME) %>% 
                           distinct() %>% 
                           pull() %>% 
@@ -539,7 +544,7 @@ shinyServer(function(input, output) {
 
                         
                         wsdunits <- wqs() %>% 
-                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('89', '87', '92')) %>%  #5089 for class sd waters
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5089', '5087', '5092')) %>%  #5089 for class sd waters
                           select(UNIT_NAME) %>% 
                           distinct() %>% 
                           pull() %>% 
@@ -556,7 +561,7 @@ shinyServer(function(input, output) {
                     if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
                       
                         wqsb <- wqs() %>% 
-                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('88', '87')) %>%  # 5088 for class SB waters and 5087 for surface waters
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5088', '5087')) %>%  # 5088 for class SB waters and 5087 for surface waters
                           select(CRITERION_VALUE) %>% 
                           pull() %>% 
                           str_remove(',') %>% 
@@ -584,13 +589,18 @@ shinyServer(function(input, output) {
                     if(pc %in% wqs()$POLLUTANT_CODE_ECHO == TRUE){
                       
                         wqsd <-  wqs() %>% 
-                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('89', '87', '92')) %>%  # 5089 for class sd waters, 5087 for surface waters, and 5092 for SD/drinking water
+                          filter(POLLUTANT_CODE_ECHO == pc & USE_CLASS_NAME_LOCATION_ETC_ID %in% c('5089', '5087', '5092')) %>%  # 5089 for class sd waters, 5087 for surface waters, and 5092 for SD/drinking water
                           select(CRITERION_VALUE) %>% 
                           pull() %>% 
                           unique()
                         
-                        # check for numeric or "See Equation"
-                        if (!is.na(as.numeric(wqsd)) == TRUE) {
+                        # check to see if there is a value
+                        if (length(wqsd) == 0){
+                          
+                          wqsd <- NA
+                          
+                          # check for numeric or "See Equation"
+                        } else if (!is.na(as.numeric(wqsd)) == TRUE) {
                           wqsd <- wqsd %>% 
                             as.numeric()
                         }
@@ -974,8 +984,13 @@ shinyServer(function(input, output) {
                                 pull() %>% 
                                 unique()
                               
-                              # check for numeric or "See Equation"
-                              if (!is.na(as.numeric(wqsd)) == TRUE) {
+                              # check to see if there is a value
+                              if (length(wqsd) == 0){
+                                
+                                wqsd <- NA
+                                
+                                # check for numeric or "See Equation"
+                              } else if (!is.na(as.numeric(wqsd)) == TRUE) {
                                 wqsd <- wqsd %>% 
                                   as.character()
                               }
@@ -986,7 +1001,7 @@ shinyServer(function(input, output) {
                             }
                             
                             
-                            
+
                             # --------------------------------------------------
                             all_params_report <- all_params_report %>%
                               add_row(

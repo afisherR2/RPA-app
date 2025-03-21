@@ -11,7 +11,6 @@ params:
   street: NA
   citystate: NA
   outfall: NA
-  WQSfile: NA
   param: NA
   unts: NA
   nsam: NA
@@ -52,8 +51,6 @@ knitr::opts_chunk$set(echo = FALSE)
 #### `r params$street`
 #### `r params$citystate`
 
-#### WQS Import File: `r params$WQSfile`
-
 ***
 ### **SUMMARY STATISTICS:**
 #### Number of Samples: `r params$nsam` 
@@ -66,9 +63,9 @@ knitr::opts_chunk$set(echo = FALSE)
 
 
 ### **TIME SERIES**
-```{r}
-params$pplot
-```
+# ```{r}
+# params$pplot
+# ```
 
 #### &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\textcolor{maxcolor}{---Max: `r params$pmx` `r params$unts`} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\textcolor{sbcolor}{...WQS - SB: `r params$WQSB` `r params$unts`}
 
@@ -84,7 +81,7 @@ params$pplot
 \text {Number of samples} & = n\\
 \text {Maximum effluent concentration} & = max\\
 \text {Dilution Ratio} & = DR\\
-\text {Coefficient of Variation (CV)} & = S_{n}/\mu \text { or 0.6 when } n \le 10\\
+\text {Coefficient of Variation (CV)} & = S_{n}/\mu \text { or 0.6 when n < 10}\\
 \text {Z-statistic} & = Z_{x}\\
 \text {Reasonable Potential Multiplier (RPM)} & = \displaystyle \frac{exp(Z_{95}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}{exp(Z_{x}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}\\
 \text {Receiving Water Concentration} & = max * RPM / \text {Dilution Ratio}\\

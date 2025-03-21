@@ -150,7 +150,7 @@ shinyUI(
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
                           p('To start, enter a NPDES ID in the ', strong('NPDES ID Input'), ' field
-          and the analysis date range  in the ', strong('Dates for Analysis'), '
+          and the analysis date range in the ', strong('Dates for Analysis'), '
           field. Select the down arrow button to proceed to the next 
           section.'),
           
