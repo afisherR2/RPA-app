@@ -495,8 +495,7 @@ shinyServer(function(input, output) {
                         cv = RWCvalues$cv,
                         z95 = RWCvalues$z95,
                         zx = RWCvalues$zx,
-                        RPM = RWCvalues$RPM,
-                        stringsAsFactors = FALSE)
+                        RPM = RWCvalues$RPM)
                     })
                     
                     # reactive element for dilution ration
@@ -830,8 +829,11 @@ shinyServer(function(input, output) {
                                     column(2, offset = 10,
                                               output$sscsv <- downloadHandler(
                                                 
-                                                filename = paste0(input$NPDESID, 
-                                                         '_', input$radiob, '_', p,'_Summary_Stats.csv'),
+                                                filename = function(){
+                                                  paste0(input$NPDESID, 
+                                                         '_', input$radiob, '_', p,'_Summary_Stats.csv')
+                                                  },
+                                                # trycatch
                                                 
                                                 content = function(file) {
                                                   write.csv(pstats(), file, row.names = FALSE)
@@ -912,8 +914,7 @@ shinyServer(function(input, output) {
                                 cv = RWCvalues$cv,
                                 z95 = RWCvalues$z95,
                                 zx = RWCvalues$zx,
-                                RPM = RWCvalues$RPM,
-                                stringsAsFactors = FALSE)
+                                RPM = RWCvalues$RPM)
                             })
                             
                             # dates of RP evaluation
@@ -1026,7 +1027,7 @@ shinyServer(function(input, output) {
                                 pz95 = pstats()$z95,
                                 pzx = pstats()$zx,
                                 RPM = pstats()$RPM,
-                                DR = 1,
+                                DR = input$DR,
                                 WQSB = wqsb,
                                 WQSD = wqsd)
                             # pplot = ppl(),
