@@ -170,11 +170,7 @@ shinyUI(
           p(' Select the ', strong('Download'),' button to save a formatted PDF containing 
           facility information, summary statistics, the discharge history plot, 
           detailed Receiving Water Concentration calculations,
-          and the raw data used in the calculations.'),
-          
-          p('A formatted water quality standards excel template can be found',
-            tags$a(href = 'RPTOOL_WQS_Template.xlsx',
-                   'here.', target = 'blank', download = 'RPTOOL_WQS_Template.xlsx')))),
+          and the raw data used in the calculations.'))),
 	
 # NPDES ID input and WQS csv
 	fluidRow(
