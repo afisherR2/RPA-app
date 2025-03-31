@@ -275,12 +275,14 @@ shinyServer(function(input, output) {
             # GET('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx',
             #     write_disk(tf <- tempfile(fileext = '.xlsx')))
 
-            wqsraw <- read_excel('www/criteria-search-tool-data.xlsx',
-                                 skip = 207) # skip the first 200 lines b/c the flat file is formatted weird
+            # wqsraw <- read_excel('www/criteria-search-tool-data.xlsx',
+            #                      skip = 207) # skip the first 200 lines b/c the flat file is formatted weird
             
+            wqsraw <- read.xlsx("https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx",
+                                 startRow=208)
             
-            # wqsraw <- read.xlsx('https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx',
-            #                      startRow = 208)
+            wqsraw <- read_excel("https://cfpub.epa.gov/wqsits/wqcsearch/criteria-search-tool-data.xlsx",
+                                 skip=207)
 
         })
         
@@ -395,11 +397,6 @@ shinyServer(function(input, output) {
       
       wqsfine <- wqsraw() %>% 
         
-        # remove rows of cst data until row 1 == Criterion_ID
-        # make column headers
-        slice(which.max(wqsraw()[,1] == 'CRITERION_ID') : n()) %>% 
-        set_names(slice(.,1)) %>% 
-        slice(-1) %>% 
         
         filter(ENTITY_ABBR == substr(input$NPDESID, 1, 2)) %>% # filter for PR or VI
         
