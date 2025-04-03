@@ -355,96 +355,46 @@ edate <- as.Date(today(), '%m/%d/%Y')
     # Compile master pollutant table
     
     
-    # create empty list
-    RWCval <- list()
     
-    # filter dmr by parameter and select value number
-    db <- value %>% 
-      filter(parameter_desc == p) %>% 
-      filter(between(monitoring_period_end_date, dates1, dates2)) %>%  # filter to only be inside the date range slider
-      # filter(monitoring_period_end_date >= dates1 & monitoring_period_end_date <= dates2) %>%
-      select(dmr_value_nmbr)
-    
-    df <- db$dmr_value_nmbr %>%  # sort
-      sort() %>% 
-      as.numeric()
-    
-    
-    n <- length(df) # number of samples
-    max <- max(df) # max of samples
-    
-    RWCval$min <- min(df) # min of samples
-    RWCval$n <- n # number of samples
-    RWCval$max <- max # max of samples
-    
-    m <- mean(df)  # mean of samples
-    
-    sd <- sd(df) # standard deviation
-    
-    # assing values to list
-    RWCval$m <- m %>% 
-      round(2)
-    RWCval$sd <- sd %>% 
-      round(2)
-    
-    # coefficient of variation
-    if (n > 10) {
-      # cv <- round(sd/m,2)
-      cv <- (sd/m)
-    } else {
-      cv <- 0.6
-    }
-    
-    RWCval$cv <- cv %>% 
-      round(2)
-    
-    cv2 <- cv^2 # cv squared
-    
-    # Percentile Pn
-    # for n >= 20, n = 20, else (1 - 0.95)^(1/n)
-    if (n >= 20) {
-      x <- (1 - 0.95)^(1/20) # CHECK on this
-    } else {
-      x <- (1 - 0.95)^(1/n)}
-    
-    # z score
-    z95 <- 1.645
-    zx <- qnorm(x) 
-    
-    RWCval$z95 <- z95
-    RWCval$zx <- round(zx,3)
-    
-    # FROM "notes on PR DMR and RPA Tools" page 5 - on PR Qlick ShapePoint
-    # derived from 1991 Support pg 52
-    RPM <- (exp(z95*log(1+cv2)^0.5 - (0.5*log(1+cv2)))) / (exp(zx*log(1+cv2)^0.5 - (0.5*log(1+cv2))))
-    
-    RWCval$RPM <- RPM %>%
-      round(2)
-    
-    # RWC equation
-    RWC <- round(max * RPM / as.numeric(dr), 2)
-    
-    RWCval$RWC <- RWC
-    
-    return(RWCval)
     
     # list of unique parameters in the DMR
     paramtab <- tibble(Parameter = sort(unique(dmr_of$parameter_desc))) # list of parameters
 
     
     # calculate summary stats and RWC calc for each parameter
-    mpstats <- paramtab |>
+    mpstats <- RWC_group(dmr_of, 1, sdate, edate)
       
-      # split(paramtab$Parameter) |>
-      group_by(Parameter) |>
-      
-      group_map( ~ RWC(value = dmr_of, p = ., dr = 1, dates1 = sdate, dates2 = edate))
+    RWC_group <- function(.data, .dr, .sdate, .edate) {
+      .data |> 
+        group_by(parameter_desc) |>
+        filter(between(monitoring_period_end_date, .sdate, .edate)) |>
+        summarise(n = n(), # number of samples
+                  min = min(dmr_value_nmbr), # min of samples
+                  m = mean(dmr_value_nmbr), # mean of samples
+                  max = max(dmr_value_nmbr), # max of samples
+                  sd = sd(dmr_value_nmbr), # sd of samples
+                  cv = if (n > 10) { # coefficient of variation
+                      cv = (sd/m)
+                    } else {
+                      cv = 0.6
+                    },
+                  
+                  cv2 = cv^2, # cv squared
+                  
+                  # Percentile Pn
+                  # for n >= 20, n = 20, else (1 - 0.95)^(1/n)
+                  x = if (n >= 20) {
+                    (1 - 0.95)^(1/20) # CHECK on this
+                  } else {
+                    (1 - 0.95)^(1/n)},
+                  
+                  # z score
+                  z95 = 1.645,
+                  zx = qnorm(x),
 
-      # group_map(function(p){
-      #   RWC(value = dmr_of, p = p, dr = 1, dates1 = sdate, dates2 = edate)})
-
-    
-    
-    
-    
+                  RPM = (exp(z95*log(1+cv2)^0.5 - (0.5*log(1+cv2)))) / (exp(zx*log(1+cv2)^0.5 - (0.5*log(1+cv2)))),
+                  
+                  RWC = round(max * RPM / as.numeric(.dr), 2)
+                  )
+    }
     
