@@ -85,7 +85,7 @@ shinyUI(
        </div>
        </div>
        <div class='main-column clearfix'><!--googleon:all-->
-	   <h1  class='page-title'>R2 Reasonable Potential Tool BETA</h1>
+	   <h1  class='page-title'>R2 Reasonable Potential Analysis Tool BETA</h1>
        <div class='panel-pane pane-node-content'>
        <div class='pane-content'>
        <div class='node node-page clearfix view-mode-full'>   
