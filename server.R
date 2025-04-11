@@ -219,7 +219,8 @@ RWC_group <- function(.data, .dr, .sdate, .edate) { # .data = cleaned dmr, .dr =
 
 #####
 # Create tab panel to hold summary stats, dilution ratio, and date slider    
-
+# following the creation of a conditional UI from :https://mastering-shiny.org/action-dynamic.html#dynamic-visibility.
+# 10.2.1
 
 summary_panel <- tabsetPanel(
   
