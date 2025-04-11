@@ -18,8 +18,10 @@ library(httr)
 library(stringr)
 library(tidyr)
 library(openxlsx)
+library(reactlog)
 # 🔻
 
+reactlog::reactlog_enable() # Ctrl + Fn + F3 to view reactive log
 
 # NEED to download CST from URL and work on the server
 
@@ -212,6 +214,97 @@ RWC_group <- function(.data, .dr, .sdate, .edate) { # .data = cleaned dmr, .dr =
 #   )
 # }
 
+
+
+
+#####
+# Create tab panel to hold summary stats, dilution ratio, and date slider    
+
+
+summary_panel <- tabsetPanel(
+  
+  id = 'summpan',
+  type = 'hidden',
+  
+  tabPanel('sstats',
+           h4(strong(renderText('Summary Stats'))),
+           
+           # dilution ratio
+           numericInput('DR',
+                        label = h4('Dilution Ratio:'), width = '50%',
+                        value = 1),
+           
+           
+           # date slider
+           sliderInput('dateSlider', h5('Date Range:'),
+                       min = as.Date(today(), '%Y-%m-%d'),
+                       max = as.Date(today() %m-% years(5), '%Y-%m-%d'),
+                       value = c(as.Date(today(), '%Y-%m-%d'), as.Date(today() %m-% years(5), '%Y-%m-%d')),
+                       step = 365,
+                       ticks = FALSE,
+                       timeFormat = '%Y')
+           )
+           # 
+           # h5(renderText(
+           #   paste('# Samples : ',
+           #         mpstats() |> 
+           #           filter(perm_feature_nmbr == input$radiob,
+           #                  parameter_desc == p) |> 
+           #           ungroup() |> 
+           #           select(n)))),
+           # 
+           # h5(renderText(
+           #   paste('Min : ',
+           #         mpstats() |> 
+           #           filter(perm_feature_nmbr == input$radiob,
+           #                  parameter_desc == p) |> 
+           #           ungroup() |> 
+           #           select(min), ' ',
+           #         punits))),
+           # 
+           # h5(renderText(
+           #   paste('Mean : ',
+           #         mpstats() |> 
+           #           filter(perm_feature_nmbr == input$radiob,
+           #                  parameter_desc == p) |> 
+           #           ungroup() |> 
+           #           select(m), ' ',
+           #         punits))),
+           # 
+           # h5(renderText(
+           #   paste('Max : ',
+           #         mpstats() |> 
+           #           filter(perm_feature_nmbr == input$radiob,
+           #                  parameter_desc == p) |> 
+           #           ungroup() |> 
+           #           select(max), ' ',
+           #         punits))),
+           # 
+           # br(),
+           # 
+           # # h5(renderText(
+           # #   paste('WQS - SB :',
+           # #         wqsb, ' ', 
+           # #         wsbunits))), #punits
+           # # 
+           # # h5(renderText(
+           # #   paste('WQS - SD :', 
+           # #         wqsd, ' ', 
+           # #         wsdunits))), #punits
+           # 
+           # br(),
+           # 
+           # h5(renderText(
+           #   paste('RWC : ', 
+           #         mpstats() |> 
+           #           filter(perm_feature_nmbr == input$radiob,
+           #                  parameter_desc == p) |> 
+           #           ungroup() |> 
+           #           select(RWC), ' ', 
+           #         punits)))),
+  
+)
+
 #-------------------------------------------------------------------------------
 # Define server logic 
 
@@ -291,14 +384,7 @@ shinyServer(function(input, output) {
                 })
     })
     
-# BUTTONS ----------------------------------------------------------------------
-        
-# First next button
-        output$nextBtn <- renderUI({
-            actionButton('nextBtn', 
-                         label = '',
-                         icon = icon('angle-down'))})
-        
+      
 # Read in WQS from OST criteria search tool
         wqsraw <- eventReactive(input$nextBtn, {
             
@@ -418,19 +504,7 @@ shinyServer(function(input, output) {
     }, ignoreNULL = TRUE)
     
     
-    # dilution ratio
-    output$pdr <- eventReactive(input$nextBtn2, {
-      numericInput('DR',
-                   label = h5('Dilution Ratio:'), width = '50%',
-                   value = 1)
-    })
-    
-    # reactive element for dilution ration
-    pdr <- reactive({
-      as.numeric(input$DR)
-    })
-    
-    
+
     observeEvent(input$nextBtn2, {
       
       # dates of RP evaluation
@@ -445,22 +519,18 @@ shinyServer(function(input, output) {
       sdate_char <- as.character(sdate)
       edate_char <- as.character(edate)
       
-    }
-    )
+    })
     
-    
-    # Date range slider
-    output$Dslider <- eventReactive(input$nextBtn2, {
-      sliderInput('dateSlider', h5('Date Range:'),
-                  min = as.Date(sdate(), '%Y-%m-%d'), 
-                  max = as.Date(edate(), '%Y-%m-%d'),
-                  value = c(as.Date(sdate(), '%Y-%m-%d'), as.Date(edate(), '%Y-%m-%d')),
-                  step = 365,
-                  ticks = FALSE,
-                  timeFormat = '%Y')
+    observeEvent(input$nextBtn2,{
+      updateTabsetPanel(inputId = 'summpan', selected = 'sstats')
+      
     })
     
 
+    # reactive element for dilution ration
+    pdr <- reactive({
+      as.numeric(input$DR)
+    })
     
     
     # run RWC calculations on all outfalls and all parameters
@@ -645,98 +715,105 @@ shinyServer(function(input, output) {
                                          sidebarLayout(
                                              sidebarPanel(
                                                
+                                               summary_panel
+                                               
                                              # Summary statistics
-                                             h4(strong(renderText('Summary Stats'))),
+                                             # h4(strong(renderText('Summary Stats'))),
+                                             # 
+                                             # br(),
+                                             # 
+                                             # h5(renderText(
+                                             #     paste('# Samples : ',
+                                             #           mpstats() |> 
+                                             #             filter(perm_feature_nmbr == input$radiob,
+                                             #                    parameter_desc == p) |> 
+                                             #             ungroup() |> 
+                                             #             select(n)))),
+                                             # 
+                                             # h5(renderText(
+                                             #     paste('Min : ',
+                                             #           mpstats() |> 
+                                             #             filter(perm_feature_nmbr == input$radiob,
+                                             #                    parameter_desc == p) |> 
+                                             #             ungroup() |> 
+                                             #             select(min), ' ',
+                                             #           punits))),
+                                             # 
+                                             # h5(renderText(
+                                             #     paste('Mean : ',
+                                             #           mpstats() |> 
+                                             #             filter(perm_feature_nmbr == input$radiob,
+                                             #                    parameter_desc == p) |> 
+                                             #             ungroup() |> 
+                                             #             select(m), ' ',
+                                             #           punits))),
+                                             #     
+                                             # h5(renderText(
+                                             #     paste('Max : ',
+                                             #           mpstats() |> 
+                                             #             filter(perm_feature_nmbr == input$radiob,
+                                             #                    parameter_desc == p) |> 
+                                             #             ungroup() |> 
+                                             #             select(max), ' ',
+                                             #          punits))),
+                                             # 
+                                             # br(),
+                                             # 
+                                             # h5(renderText(
+                                             #     paste('WQS - SB :',
+                                             #           wqsb, ' ', 
+                                             #           wsbunits))), #punits
+                                             # 
+                                             # h5(renderText(
+                                             #     paste('WQS - SD :', 
+                                             #           wqsd, ' ', 
+                                             #           wsdunits))), #punits
+                                             # 
+                                             # br(),
+                                             # 
+                                             # h5(renderText(
+                                             #     paste('RWC : ', 
+                                             #           mpstats() |> 
+                                             #             filter(perm_feature_nmbr == input$radiob,
+                                             #                    parameter_desc == p) |> 
+                                             #             ungroup() |> 
+                                             #             select(RWC), ' ', 
+                                             #           punits))),
+                                             # 
+                                             # br(),
+                                             # 
+                                             # # dilution ratio
+                                             # uiOutput(input$DR),
+                                             # # <- renderUI(
+                                             # #   
+                                             # #   # input$DR
+                                             # # numericInput('DR',
+                                             # #              label = h5('Dilution Ratio:'), width = '50%',
+                                             # #              value = 1)
+                                             # # ),
+                                             # 
+                                             # br(),
+                                             # 
+                                             # # Date range slider
+                                             # renderUI(
+                                             #   input$dateSlider
+                                             #)
                                              
-                                             br(),
-                                             
-                                             h5(renderText(
-                                                 paste('# Samples : ',
-                                                       mpstats() |> 
-                                                         filter(perm_feature_nmbr == input$radiob,
-                                                                parameter_desc == p) |> 
-                                                         ungroup() |> 
-                                                         select(n)))),
-                                             
-                                             h5(renderText(
-                                                 paste('Min : ',
-                                                       mpstats() |> 
-                                                         filter(perm_feature_nmbr == input$radiob,
-                                                                parameter_desc == p) |> 
-                                                         ungroup() |> 
-                                                         select(min), ' ',
-                                                       punits))),
-                                             
-                                             h5(renderText(
-                                                 paste('Mean : ',
-                                                       mpstats() |> 
-                                                         filter(perm_feature_nmbr == input$radiob,
-                                                                parameter_desc == p) |> 
-                                                         ungroup() |> 
-                                                         select(m), ' ',
-                                                       punits))),
-                                                 
-                                             h5(renderText(
-                                                 paste('Max : ',
-                                                       mpstats() |> 
-                                                         filter(perm_feature_nmbr == input$radiob,
-                                                                parameter_desc == p) |> 
-                                                         ungroup() |> 
-                                                         select(max), ' ',
-                                                      punits))),
-                                             
-                                             br(),
-                                             
-                                             h5(renderText(
-                                                 paste('WQS - SB :',
-                                                       wqsb, ' ', 
-                                                       wsbunits))), #punits
-                                             
-                                             h5(renderText(
-                                                 paste('WQS - SD :', 
-                                                       wqsd, ' ', 
-                                                       wsdunits))), #punits
-                                             
-                                             br(),
-                                             
-                                             h5(renderText(
-                                                 paste('RWC : ', 
-                                                       mpstats() |> 
-                                                         filter(perm_feature_nmbr == input$radiob,
-                                                                parameter_desc == p) |> 
-                                                         ungroup() |> 
-                                                         select(RWC), ' ', 
-                                                       punits))),
-                                             
-                                             br(),
-                                             
-                                             # dilution ratio
-                                             output$pdr <- renderUI(
-                                               
-                                               # input$DR
-                                             numericInput('DR',
-                                                          label = h5('Dilution Ratio:'), width = '50%',
-                                                          value = 1)
-                                             ),
-                                             
-                                             br(),
-                                             
-                                             # Date range slider
-                                             
-                                             output$Dslider <- renderUI(
-                                               
-                                               # input$dateSlider
-                                               sliderInput('dateSlider', h5('Date Range:'),
-                                                           min = as.Date(sdate, '%Y-%m-%d'),
-                                                           max = as.Date(edate, '%Y-%m-%d'),
-                                                           value = c(as.Date(sdate, '%Y-%m-%d'), as.Date(edate, '%Y-%m-%d')),
-                                                           step = 365,
-                                                           ticks = FALSE,
-                                                           timeFormat = '%Y'),
-                                             ), 
+                                             # output$Dslider <- renderUI(
+                                             #   
+                                             #   
+                                             #   
+                                             #   # input$dateSlider
+                                             #   sliderInput('dateSlider', h5('Date Range:'),
+                                             #               min = as.Date(sdate, '%Y-%m-%d'),
+                                             #               max = as.Date(edate, '%Y-%m-%d'),
+                                             #               value = c(as.Date(sdate, '%Y-%m-%d'), as.Date(edate, '%Y-%m-%d')),
+                                             #               step = 365,
+                                             #               ticks = FALSE,
+                                             #               timeFormat = '%Y'),
+                                             # ), 
                                              
                                              ), # end sidebar panel
-                                         ), # end sidebar layout
 
                                             
                                          # modify time series plot by checkbox input
@@ -748,7 +825,9 @@ shinyServer(function(input, output) {
 
                                              })
 
-                                         ) # Main Panel
+                                         ), # Main Panel
+                                         ) # end sidebar layout
+                                         
                                          ) # end fluid row
                                          
 # Rmd Report download ----------------------------------------------------------
