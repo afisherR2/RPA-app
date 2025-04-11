@@ -191,7 +191,9 @@ shinyUI(
 # First NEXT button  
   fluidRow(
     column(2, offset = 11,
-           uiOutput('nextBtn'))),
+           actionButton('nextBtn', 
+                        label = '',
+                        icon = icon('angle-down')))),
 
   br(),
 
