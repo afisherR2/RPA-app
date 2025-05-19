@@ -464,7 +464,7 @@ shinyServer(function(input, output, session) {
     
     
     return(filtered_wqs)
-  }) %>% bindCache(input$NPDESID, cache = "session") # Cache based on NPDES ID
+  }) %>% bindCache(isolate(input$NPDESID), cache = "session") # Cache based on NPDES ID
   
   # Link to standards
   observeEvent(input$nextBtn, {
@@ -489,7 +489,7 @@ shinyServer(function(input, output, session) {
   
   # Second next button (UI rendered dynamically)
   observeEvent(input$nextBtn, {
-    req(facility_info()) # Only show if facility info is loaded
+    req(facility_info()) # Only show if facility info isloaded
     output$nextBtn2 <- renderUI(actionButton('nextBtn2', label = '', icon = icon('angle-down')))
   })
   
@@ -527,7 +527,7 @@ shinyServer(function(input, output, session) {
       mutate(POLLUTANT_CODE_ECHO = as.numeric(POLLUTANT_CODE_ECHO))
     
     return(processed_dmr)
-  }) %>% bindCache(input$radiob, dmr_raw_data(), cache="session") # Cache based on outfall and raw DMR
+  }) %>% bindCache(isolate(input$radiob), isolate(dmr_raw_data()), cache="session") # Cache based on outfall and raw DMR
   
   # Insert tabset for parameters
   observeEvent(input$nextBtn2, {
@@ -565,7 +565,7 @@ shinyServer(function(input, output, session) {
             # Add other stats if needed from RWC_vals
           )
         }) %>% bindCache(
-          dmr_of(), p_name, input[[ns_tab("DR_param")]], input[[ns_tab("dateSlider_param")]],
+          isolate(dmr_of()), p_name, isolate(input[[ns_tab("DR_param")]]), isolate(input[[ns_tab("dateSlider_param")]]),
           cache = "session"
         )
         
@@ -586,7 +586,7 @@ shinyServer(function(input, output, session) {
           distinct()
         punits <- if(nrow(punits_df) > 0) punits_df$dmr_unit_desc[1] else "units" # Handle case with no units
         
-        # Pollutant code for this parameter from DMR data
+        # Pollutant codefor this parameter from DMR data
         pc_df <- dmr_of() %>%
           filter(parameter_desc == p_name) %>%
           select(POLLUTANT_CODE_ECHO) %>%
@@ -626,7 +626,7 @@ shinyServer(function(input, output, session) {
           wsdunits_val <- if(length(wsdunits_val) > 0) wsdunits_val[1] else punits # Fallback to DMR units
           
           list(sb = wqsb_val, sb_units = wsbunits_val, sd = wqsd_val, sd_units = wsdunits_val)
-        }) %>% bindCache(wqs_entity_data(), pc, cache = "session")
+        }) %>% bindCache(isolate(wqs_entity_data()), isolate(pc), cache = "session")
         
         
         # Time series plot for UI display
@@ -901,42 +901,6 @@ shinyServer(function(input, output, session) {
   # If downloadObjUI is dynamically rendered, callModule should still be called unconditionally once.
   # The module itself can then check for req(ap_output_val) internally.
   
-  # Let's assume the UI for downloadObjUI is always present (or managed by its own renderUI output$download_ap_ui_placeholder)
-  # and the module is called here. The module should internally handle req(ap_output_val).
-  
-  # The module call should be outside the observeEvent that prepares the data.
-  # It's called once when the server function starts.
-  # The module will react to its own inputs (like its download button).
-  
-  # This is a placeholder for where the callModule would be if the UI was static.
-  # Given the dynamic UI rendering, this is more complex.
-  # A robust way:
-  # 1. In ui.R: downloadObjUI("downloadAllReportsModule") (or a uiOutput that renders it)
-  # 2. In server.R (top level of shinyServer):
-  #    download_all_reports_module_data <- reactive({
-  #        list(
-  #            npdesID = input$NPDESID, # These will be reactive
-  #            outfall = input$radiob,
-  #            dmr_data = dmr_of(), # This is the processed DMR
-  #            ap_output = ap_output_data(), # This is the key data prepared asynchronously
-  #            facility_info = facility_info()
-  #        )
-  #    })
-  #    callModule(downloadObj, 'downloadAllReportsModule', 
-  #               npdesID_val = reactive(download_all_reports_module_data()$npdesID),
-  #               outfall_val = reactive(download_all_reports_module_data()$outfall),
-  #               dmr_data_val = reactive(download_all_reports_module_data()$dmr_data),
-  #               ap_output_val = reactive(download_all_reports_module_data()$ap_output), # Pass the prepared data
-  #               facility_info_val = reactive(download_all_reports_module_data()$facility_info)
-  #              )
-  # The module `downloadObj` would then use `req(ap_output_val())` before proceeding.
-  
-  # For the current structure where `output$download_ap_ui_placeholder` renders the module UI:
-  # We need to ensure callModule is correctly associated.
-  # This is tricky. The simplest is often to have the module UI static in ui.R.
-  # If UI is dynamic, then the callModule should be tied to the existence of that UI.
-  # This can be done by observing the trigger that creates the UI.
-  
   # Let's try to call it when ap_output_data is ready, assuming the UI is also ready then.
   # This might lead to multiple callModule calls if not handled carefully.
   # A flag to ensure it's called only once.
@@ -950,7 +914,7 @@ shinyServer(function(input, output, session) {
                npdesID_val = isolate(input$NPDESID), # Use isolate if these shouldn't trigger re-call
                outfall_val = isolate(input$radiob),
                dmr_data_val = isolate(dmr_of()), # This is the processed DMR
-               ap_output_val = ap_output_data(), # This is the key data, passed reactively
+               ap_output_val = ap_output_data(), # Pass the prepared data reactively
                facility_info_val = isolate(facility_info())
     )
     module_called_downloadAllReportsModule(TRUE)
