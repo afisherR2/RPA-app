@@ -22,18 +22,18 @@ library(stringr)
 
 # Define UI for application
 shinyUI(
-    fluidPage(
-        # tags$body(class = "html wide-template"),
-        # tags$head(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style.css')),
-        
-        theme = shinytheme("yeti"),
-        tags$head(tags$link(rel = "stylesheet",
-                            type = "text/css", href = "style.css")),
-        
-##### Header
-#####
-        HTML
-        (" <header class='masthead clearfix' role='banner'>
+  fluidPage(
+    # tags$body(class = "html wide-template"),
+    # tags$head(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style.css')),
+    
+    theme = shinytheme("yeti"),
+    tags$head(tags$link(rel = "stylesheet",
+                        type = "text/css", href = "style.css")),
+    
+    ##### Header
+    #####
+    HTML
+    (" <header class='masthead clearfix' role='banner'>
 	   <img alt='' class='site-logo' src='https://www.epa.gov/sites/all/themes/epa/logo.png'>
        <div class='site-name-and-slogan'>
        <h1 class='site-name'><a href='https://www.epa.gov/' rel='home' title='Go to the home page'><span>US EPA</span></a></h1>
@@ -97,27 +97,27 @@ shinyUI(
 	   </div>
 
 	"),
-#####
-
-# Insert RShiny App here
-	hr(),
-
-
-# shinyFeedback
-  useShinyFeedback(),
+	#####
 	
-# add progress spinner
+	# Insert RShiny App here
+	hr(),
+	
+	
+	# shinyFeedback
+	useShinyFeedback(),
+	
+	# add progress spinner
 	add_busy_spinner(spin = 'hollow-dots',
 	                 color = '#0071bc',
 	                 position = 'top-right',
 	                 onstart = TRUE,
 	                 margins = c('50vh', '50vw')), # CSS code to display spinner in middle of screen
 	
-
-# Collapsible Overview and Instructions
-  bsCollapse(id = 'Overview',
-             bsCollapsePanel(title = h3(strong('Overview')), value = 'Overview',
-                             p('The R2 Reasonable Potential Analysis Tool is an R Shiny app developed 
+	
+	# Collapsible Overview and Instructions
+	bsCollapse(id = 'Overview',
+	           bsCollapsePanel(title = h3(strong('Overview')), value = 'Overview',
+	                           p('The R2 Reasonable Potential Analysis Tool is an R Shiny app developed 
           to support NPDES permit writers’ evaluation of concentration based effluent discharged from 
           permitted facilities. The Tool assists in determination of 
           reasonable potential by comparing effluent discharge history with current water 
@@ -126,7 +126,7 @@ shinyUI(
           Toxics Control', target = 'blank'), ', pages 51-55 & Appendix E). The Receiving Water Concentration
           calculations assume a 95% confidence level and a 95% probability basis. Please review the
           Technical Support Document for further inquiry.'),
-      
+          
           
           p('The tool specifically analyzes effluent meeting the following criteria: 
           concentration based effluent,
@@ -138,15 +138,12 @@ shinyUI(
           the data range specified are extracted from the Enforcement and Compliance History Online
           database', tags$a(href = 'https://echo.epa.gov', '(ECHO)', target = 'blank'), ' 
           and are taken "as is" - no data cleaning or scrubbing has been performed.'),
-        
+          
           
           p('No warranty, express or implied, is made by EPA or any other agency of 
           the U.S. Government regarding the accuracy, completeness, or currency 
-          of this information.'),
+          of this information.')),
           
-          p('For questions, feedback, bugs, or modification suggestions, 
-            contact Adam Fisher at', tags$a(href = 'mailto:fisher.adam@epa.gov', 
-                                                       'fisher.adam@epa.gov', target = 'blank', '.'))),
           
           bsCollapsePanel(title = h3(strong('Instructions')), value = 'Instructions',
                           p('To start, enter a NPDES ID in the ', strong('NPDES ID Input'), ' field
@@ -163,125 +160,128 @@ shinyUI(
           selected outfall will apear below. 
           Choose between various discharge parameters to view summary statistics, water quality 
           standards, the Receiving Water Concentration (RWC), and 
-          a discharge history plot. Change the Dilution Ratio 
+          a discharge history plot. 
+          
+          WQS for cadmium, chromium, copper, lead, nickel, and zink are contigent on the hardness (CaC03) of the waterbody,
+          and can be calculated using the ', strong('Hardness'), ' input field. The WQS equations for these metals can be found
+          in the', tags$a(href = 'https://www.epa.gov/sites/default/files/2014-12/documents/prwqs.pdf#page=35', 
+                          'most recent WQS.', target = 'blank'),
+          
+          'Change the Dilution Ratio 
           or select various limits to view on the plot. Use the ', strong('Date Range'), 'slider
           to modify the analysis date range.'),
           
           p(' Select the ', strong('Download'),' button to save a formatted PDF containing 
-          facility information, summary statistics, the discharge history plot, 
+          facility information, summary statistics, 
           detailed Receiving Water Concentration calculations,
-          and the raw data used in the calculations.'),
-          
-          p('A formatted water quality standards excel template can be found',
-            tags$a(href = 'RPTOOL_WQS_Template.xlsx',
-                   'here.', target = 'blank', download = 'RPTOOL_WQS_Template.xlsx')))),
+          and the raw data used in the calculations.'))),
 	
-# NPDES ID input and WQS csv
+	# NPDES ID input and WQS csv
 	fluidRow(
 	  
 	  hr(),
 	  br(),
 	  br(),
-
-	    column(4, offset = 1,
-	           textInput('NPDESID', label = h3('NPDES ID Input'),
-	                     value = 'PR0024163')),
-
-    column(4, offset = 1,
-           dateRangeInput('dateRange', label = h3('Dates for analysis'),
-                          start = today() %m-% years(5), end = today())
-           )),
+	  
+	  column(4, offset = 1,
+	         textInput('NPDESID', label = h3('NPDES ID Input'),
+	                   value = 'PR0024163')),
+	  
+	  column(4, offset = 1,
+	         dateRangeInput('dateRange', label = h3('Dates for analysis'),
+	                        start = today() %m-% years(5), end = today())
+	  )),
 	
-# First NEXT button  
-  fluidRow(
-    column(2, offset = 11,
-           uiOutput('nextBtn'))),
-
-  br(),
-
-# Criteria Button
-  fluidRow(
-    column(3, offset = 10,
-                  uiOutput('critBtn'))),
-  
-
-  	br(),
-  	hr(),
-	
-# LARGE NPDES ID and Address
+	# First NEXT button  
 	fluidRow(
-	    column(6, offset = 1,
-	           h1(textOutput('facility'))),
-	    
-	    column(5,
-	           h2(textOutput('street')),
-	           h2(textOutput('citystate')))),
+	  column(2, offset = 11,
+	         uiOutput('nextBtn'))),
+	
+	br(),
+	
+	# Criteria Button
+	fluidRow(
+	  column(3, offset = 10,
+	         uiOutput('critBtn'))),
 	
 	
-# Select outfall to use ONLY if there are more than one
-
-  fluidRow(
-      column(4, offset = 1,
-            uiOutput('outfallradio'))),
+	br(),
+	hr(),
+	
+	# LARGE NPDES ID and Address
+	fluidRow(
+	  column(6, offset = 1,
+	         h1(textOutput('facility'))),
+	  
+	  column(5,
+	         h2(textOutput('street')),
+	         h2(textOutput('citystate')))),
+	
+	
+	# Select outfall to use ONLY if there are more than one
+	
+	fluidRow(
+	  column(4, offset = 1,
+	         uiOutput('outfallradio'))),
 	
 	br(),
 	br(),
 	
-# second NEXT button
+	# second NEXT button
 	fluidRow(
-	    column(2, offset = 11,
-	           uiOutput('nextBtn2'))),
-  
-  br(),
-  br(),
+	  column(2, offset = 11,
+	         uiOutput('nextBtn2'))),
 	
-
-# tabset for each parameter
-
-  fluidRow(
-    column(12,
-           uiOutput('tabs'))
-  ),
-  
-  br(),
-  
-
-  fluidRow(
-      
-      column(2,
-             uiOutput('pMaxbox')),
-      
-      column(2,
-             uiOutput('pSBxbox')),
-      
-      column(2,
-             uiOutput('pSDxbox')),
-      
-      column(2,
-             uiOutput('pRWCxbox'))
-  ),
-
-# Downloads
-  fluidRow(
-    column(2, offset = 9,
-           uiOutput('downloadBtn'))), # download parameter report
-
-  br(),
-
-  fluidRow(  
-    column(2, offset = 11,
-           uiOutput('sscsv'))), # download summary stats csv
-  
-  fluidRow(
-    column(2, offset = 10,
-           uiOutput('download_ap'))), # download ALL parameter report
-
-  br(),
-  br(),
-  br(),	
-
-# Footer
-#####
+	br(),
+	br(),
+	
+	
+	# tabset for each parameter
+	
+	fluidRow(
+	  column(12,
+	         uiOutput('tabs'))
+	),
+	
+	br(),
+	
+	
+	fluidRow(
+	  
+	  column(2,
+	         uiOutput('pMaxbox')),
+	  
+	  column(2,
+	         uiOutput('pSBxbox')),
+	  
+	  column(2,
+	         uiOutput('pSDxbox')),
+	  
+	  column(2,
+	         uiOutput('pRWCxbox'))
+	),
+	
+	# Downloads
+	fluidRow(
+	  column(2, offset = 9,
+	         uiOutput('downloadBtn'))), # download parameter report
+	
+	br(),
+	
+	fluidRow(  
+	  column(2, offset = 11,
+	         uiOutput('sscsv'))), # download summary stats csv
+	
+	fluidRow(
+	  column(2, offset = 10,
+	         uiOutput('download_ap'))), # download ALL parameter report
+	
+	br(),
+	br(),
+	br(),	
+	
+	# Footer
+	#####
 	HTML("
 	  </section>
 		<footer class='main-footer clearfix' role='contentinfo'>
@@ -347,6 +347,6 @@ shinyUI(
 		</div>
 		</footer>
 	")
-#####
-    )
+	#####
+  )
 )
