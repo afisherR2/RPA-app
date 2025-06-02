@@ -1,0 +1,110 @@
+---
+title: 'R2 Reasonable Potential Tool Parameter Report'
+date: "Compiled on `r format(Sys.time(), '%d %B, %Y')`"
+
+# css: www/style.css
+params:
+  sdat: NA
+  edat: NA
+  NPDES: NA
+  fac: NA
+  street: NA
+  citystate: NA
+  outfall: NA
+  param: NA
+  unts: NA
+  nsam: NA
+  pmn: NA
+  pmean: NA
+  pmx: NA
+  RWC: NA
+  pcv: NA
+  pz95: NA
+  pzx: NA
+  RPM: NA
+  DR: NA
+  WQSB: NA
+  WQSD: NA
+  pplot:
+  dmrr:
+output: pdf_document
+header-includes: \usepackage{xcolor}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+\definecolor{maxcolor}{RGB}{223,194,125}
+\definecolor{sbcolor}{RGB}{191,129,45}
+\definecolor{sdcolor}{RGB}{140,81,10}
+\definecolor{rwccolor}{RGB}{84,48,5}
+
+# **`r params$NPDES` - `r params$outfall` : `r params$param`**
+
+#### Evaluated from `r params$sdat` to `r params$edat`
+
+
+### **FACILITY INFORMATION: **  
+
+#### `r params$fac`
+#### `r params$street`
+#### `r params$citystate`
+
+***
+### **SUMMARY STATISTICS:**
+#### Number of Samples: `r params$nsam` 
+#### Min: `r params$pmn` `r params$unts` 
+#### Mean: `r params$pmean` `r params$unts`
+#### Max: `r params$pmx` `r params$unts` 
+#### WQS - SB: `r params$WQSB` `r params$unts`
+#### WQS - SD: `r params$WQSD` `r params$unts`
+#### RWC: `r params$RWC` `r params$unts`
+
+
+### **TIME SERIES**
+# ```{r}
+# params$pplot
+# ```
+
+#### &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\textcolor{maxcolor}{---Max: `r params$pmx` `r params$unts`} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\textcolor{sbcolor}{...WQS - SB: `r params$WQSB` `r params$unts`}
+
+#### &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; \textcolor{sdcolor}{- - WQS - SD: `r params$WQSD` `r params$unts`} &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;\textcolor{rwccolor}{--RWC: `r params$RWC` `r params$unts`}
+
+\newpage
+
+### **RECEIVING WATER CONCENTRATION CALCULATIONS**
+#### *assuming a 95% confidence level and a 95% probability basis*\
+*calculations from 1991 Technical Support Document pgs 51-55*
+\
+\begin{align*}
+\text {Number of samples} & = n\\
+\text {Maximum effluent concentration} & = max\\
+\text {Dilution Ratio} & = DR\\
+\text {Coefficient of Variation (CV)} & = S_{n}/\mu \text { or 0.6 when n < 10}\\
+\text {Z-statistic} & = Z_{x}\\
+\text {Reasonable Potential Multiplier (RPM)} & = \displaystyle \frac{exp(Z_{95}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}{exp(Z_{x}\ln(1 + CV^{2})^{0.5} - 0.5\ln(1 + CV^{2}))}\\
+\text {Receiving Water Concentration} & = max * RPM / \text {Dilution Ratio}\\
+\\
+n & = `r params$nsam`\\
+max & = `r params$pmx`\\
+DR & = `r params$DR`\\
+CV & = `r params$pcv`\\
+Z_{95} & = `r params$pz95`\\
+Z_{x} & = `r params$pzx`\\
+\\
+RPM & = \displaystyle \frac{exp(`r params$pz95`\ln(1 + `r params$pcv`^{2})^{0.5} - 0.5\ln(1 + `r params$pcv`^{2}))}{exp(`r params$pzx`\ln(1 + `r params$pcv`^{2})^{0.5} - 0.5\ln(1 + `r params$pcv`^{2}))}\\
+ & = `r params$RPM`\\
+ \\
+RWC & = `r params$pmx` * `r params$RPM` / `r params$DR`\\
+ & = `r params$RWC`
+\end{align*}
+
+***
+
+\newpage
+
+### **DATA TABLE**
+```{r}
+knitr::kable(params$dmrr)
+```
