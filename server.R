@@ -390,8 +390,7 @@ shinyServer(function(input, output) {
   
   
   # filter standards for entity abbreviation and cross walk with CST and WQP
-  wqsfine <- eventReactive(input$nextBtn2, {
-    
+  wqs <- eventReactive(input$nextBtn2, {
     
     wqsfine <- wqsraw() %>% 
       
@@ -406,12 +405,38 @@ shinyServer(function(input, output) {
       select(c(ENTITY_NAME, STD_POLL_ID, STD_POLLUTANT_NAME, CRITERION_VALUE, UNIT_NAME,
                CRITERIATYPEAQUAHUMHLTH, CRITERIATYPEFRESHSALTWATER,
                USE_CLASS_NAME_LOCATION_ETC_ID, USE_CLASS_NAME_LOCATION_ETC, EFFECTIVE_DATE, LAST_ENTRY_IN_DB)) %>% 
-      
+
       # make some changes - pH wqs are read in as a range - change to single values
-      mutate(CRITERION_VALUE = case_when(CRITERION_VALUE == 'See Equation' ~ '1000', # replace all "See Equation" statements with a number
+      # mutate(CRITERION_VALUE = case_when(CRITERION_VALUE == 'See Equation' ~ '1000', # replace all "See Equation" statements with a number
                                            # Parameter == 'pH (acidity/alkalinity)' & `Criterion Application` == 'class SB waters' ~ '7.3', # recode to low end of range
                                            # Parameter == 'pH (acidity/alkalinity)' & `Criterion Application` == 'class SD waters' ~ '6.0', # recode to low end of range
-                                           .default = CRITERION_VALUE)) |> 
+                                           # .default = CRITERION_VALUE)) |>
+      
+      # change metals based on hardness 100
+      # equation from puerto rico wqs: https://www.epa.gov/sites/default/files/2014-12/documents/prwqs.pdf
+      mutate(CRITERION_VALUE = case_when(
+
+        #   # copper
+        CRITERION_VALUE == 'See Equation' & STD_POLLUTANT_NAME == 'copper' ~ round(exp(0.8545 * (log(as.numeric(100))) - 1.702), 2) |> as.character(),
+        
+        # cadmium
+        CRITERION_VALUE == 'See Equation' & STD_POLLUTANT_NAME == 'cadmium' ~ round(exp(0.7977 * (log(as.numeric(100))) - 3.909), 2) |> as.character(),
+        
+        # chromium iii
+        CRITERION_VALUE == 'See Equation' & STD_POLLUTANT_NAME == 'chromium iii' ~ round(exp(0.8190 * (log(as.numeric(100))) + 0.6848), 2) |> as.character(),
+        
+        # nickel
+        CRITERION_VALUE == 'See Equation' & STD_POLLUTANT_NAME == 'nickel' ~ round(exp(0.8460 * (log(as.numeric(100))) + 0.0584), 2) |> as.character(),
+        
+        # lead
+        CRITERION_VALUE == 'See Equation' & STD_POLLUTANT_NAME == 'lead' ~ round(exp(1.273 * (log(as.numeric(100))) - 4.705), 2) |> as.character(),
+        
+        # zinc
+        CRITERION_VALUE == 'See Equation' & STD_POLLUTANT_NAME == 'zinc' ~ round(exp(0.8473 * (log(as.numeric(100))) + 0.884), 2) |> as.character(),
+        
+        .default = CRITERION_VALUE)) %>%
+      arrange(STD_POLLUTANT_NAME) |> 
+      
       
       # remove '.0' from STD_POLL_ID and USE_CLASS_NAME_LOCATION_ETC_ID
       mutate(STD_POLL_ID = str_sub(STD_POLL_ID, end = -3)) %>% 
@@ -478,7 +503,6 @@ shinyServer(function(input, output) {
     # paramtab <- reactiveValues(nparam = sort(unique(dmr_of()$parameter_desc))) # list of parameters
     
     
-    
     # Map over each parameter          
     #####        
     
@@ -511,39 +535,6 @@ shinyServer(function(input, output) {
             pdr <- reactive({
               as.numeric(input$DR)
             })
-            
-            # reactive table, change metal wqs
-              wqs <- reactive({
-                
-                hardn <- as.numeric(input$hard)
-                
-                wqsfine() %>%
-                  
-                  # change metals based on hardness
-                  # equation from puerto rico wqs: https://www.epa.gov/sites/default/files/2014-12/documents/prwqs.pdf
-                  mutate(CRITERION_VALUE = case_when(
-                    
-                    # copper
-                    CRITERION_VALUE == 1000 & STD_POLLUTANT_NAME == 'copper' ~ round(exp(0.8545 * (log(hardn)) - 1.702), 2),
-                    
-                    # cadmium
-                    CRITERION_VALUE == 1000 & STD_POLLUTANT_NAME == 'cadmium' ~ round(exp(0.7977 * (log(hardn)) - 3.909), 2),
-                    
-                    # chromium iii
-                    CRITERION_VALUE == 1000 & STD_POLLUTANT_NAME == 'chromium iii' ~ round(exp(0.8190 * (log(hardn)) + 0.6848), 2),
-                    
-                    # nickel
-                    CRITERION_VALUE == 1000 & STD_POLLUTANT_NAME == 'nickel' ~ round(exp(0.8460 * (log(hardn)) + 0.0584), 2),
-                    
-                    # lead
-                    CRITERION_VALUE == 1000 & STD_POLLUTANT_NAME == 'lead' ~ round(exp(1.273 * (log(hardn)) - 4.705), 2),
-                    
-                    # zinc
-                    CRITERION_VALUE == 1000 & STD_POLLUTANT_NAME == 'zinc' ~ round(exp(0.8473 * (log(hardn)) + 0.884), 2),
-                    
-                    .default = CRITERION_VALUE)) %>% 
-                  arrange(STD_POLLUTANT_NAME)
-              })
             
             
             # dates of RP evaluation
@@ -615,10 +606,10 @@ shinyServer(function(input, output) {
                 
                 # check for numeric or "See Equation"
               } 
-              # else if (!is.na(as.numeric(wqsb)) == TRUE) {
-              #   wqsb <- wqsb %>% 
-              #     as.numeric()
-              # }
+              else if (!is.na(as.numeric(wqsb)) == TRUE) {
+                wqsb <- wqsb %>%
+                  as.numeric()
+              }
               
             }
             else {
@@ -643,10 +634,10 @@ shinyServer(function(input, output) {
                 
                 # check for numeric or "See Equation"
               } 
-              # else if (!is.na(as.numeric(wqsd)) == TRUE) {
-              #   wqsd <- wqsd %>% 
-              #     as.numeric()
-              # }
+              else if (!is.na(as.numeric(wqsd)) == TRUE) {
+                wqsd <- wqsd %>%
+                  as.numeric()
+              }
               
             }
             else {
@@ -761,13 +752,6 @@ shinyServer(function(input, output) {
                              numericInput('DR',
                                           label = h5('Dilution Ratio:'), width = '50%',
                                           value = 1)),
-                           
-                           br(),
-                           
-                           output$hard <- renderUI(
-                             numericInput('hard',
-                                          label = h5('Hardness (mg/L):'), width = '50%',
-                                          value = 100)),
                            
                            br(),
                            

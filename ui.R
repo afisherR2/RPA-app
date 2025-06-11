@@ -127,8 +127,15 @@ shinyUI(
           calculations assume a 95% confidence level and a 95% probability basis. Please review the
           Technical Support Document for further inquiry.'),
           
+          p('Water quality standards are pulled from the', tags$a(href = 'https://www.epa.gov/wqs-tech/state-specific-water-quality-standards-effective-under-clean-water-act-cwa',
+          'EPA Office of Science and Technology Criteria Search Tool', target = 'blank'), ', an online database that houses water
+          quality standards for the Nation. Puerto Rico water quality standards for cadmium, chromium, copper, lead, nickel, and zink are contigent on the 
+          hardness (CaC03) of the waterbody. The WQS equations for these metals can be found
+          in the', tags$a(href = 'https://www.epa.gov/sites/default/files/2014-12/documents/prwqs.pdf#page=35', 
+                          'most recent WQS.', target = 'blank'), ' The RPA Tool assumes a hardness of 100 mg/L for these metals.'),
           
-          p('The tool specifically analyzes effluent meeting the following criteria: 
+          
+          p('The RPA Tool specifically analyzes effluent meeting the following criteria: 
           concentration based effluent,
           reported daily maximum concentration,
           reported as gross effluent, 
@@ -160,21 +167,18 @@ shinyUI(
           selected outfall will apear below. 
           Choose between various discharge parameters to view summary statistics, water quality 
           standards, the Receiving Water Concentration (RWC), and 
-          a discharge history plot. 
+          a discharge history plot.
           
-          WQS for cadmium, chromium, copper, lead, nickel, and zink are contigent on the hardness (CaC03) of the waterbody,
-          and can be calculated using the ', strong('Hardness'), ' input field. The WQS equations for these metals can be found
-          in the', tags$a(href = 'https://www.epa.gov/sites/default/files/2014-12/documents/prwqs.pdf#page=35', 
-                          'most recent WQS.', target = 'blank'),
-          
-          'Change the Dilution Ratio 
+          Change the Dilution Ratio 
           or select various limits to view on the plot. Use the ', strong('Date Range'), 'slider
           to modify the analysis date range.'),
           
-          p(' Select the ', strong('Download'),' button to save a formatted PDF containing 
+          p(' Select the ', strong('Download Parameter Report'),' button to save a formatted PDF containing 
           facility information, summary statistics, 
-          detailed Receiving Water Concentration calculations,
-          and the raw data used in the calculations.'))),
+          detailed Receiving Water Concentration calculations, and the raw data used in the calculations
+          for the specific parameter selected. Select the 
+          ', strong('Download Summary Stats'), ' button to save a csv of the summary statistics. Select the
+          ', strong('Download All Parameters Report'), ' to save a zipped file containing formatted PDFs of ALL the parameters analyzed.'))),
 	
 	# NPDES ID input and WQS csv
 	fluidRow(
